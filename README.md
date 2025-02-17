@@ -1,14 +1,19 @@
-# Pico C++ Boilerplate Project <!-- omit in toc -->
+# Raspberry Pi Pico + Pimoroni C++ Sample Project <!-- omit in toc -->
 
-This project is intended as a starting point for working with the Pico SDK and Pimoroni Libraries in C++.
+# This project is based on https://github.com/pimoroni/pico-boilerplate
 
-- [Before you start](#before-you-start)
-- [Preparing your build environment](#preparing-your-build-environment)
-- [Grab the Pimoroni libraries](#grab-the-pimoroni-libraries)
-- [Clone this boilerplate](#clone-this-boilerplate)
-- [Prepare Visual Studio Code](#prepare-visual-studio-code)
-- [Prepare your project](#prepare-your-project)
-- [Pick your LICENSE](#pick-your-license)
+This is a small project to use a [Pico W](https://www.raspberrypi.com/documentation/microcontrollers/pico-series.html#pico-1-family) and a [Pimoroni Display Pack 2.0](https://shop.pimoroni.com/products/pico-display-pack-2-0) to learn C++. 
+
+You can use it as a starting point for working with the Pico SDK and Pimoroni Libraries in C++.
+
+- [This project is based on https://github.com/pimoroni/pico-boilerplate](#this-project-is-based-on-httpsgithubcompimoronipico-boilerplate)
+  - [Before you start](#before-you-start)
+  - [Preparing your build environment](#preparing-your-build-environment)
+  - [Grab the Pimoroni libraries](#grab-the-pimoroni-libraries)
+  - [Clone this boilerplate](#clone-this-boilerplate)
+  - [Prepare Visual Studio Code](#prepare-visual-studio-code)
+  - [Prepare your project](#prepare-your-project)
+  - [Pick your LICENSE](#pick-your-license)
 
 ## Before you start
 
