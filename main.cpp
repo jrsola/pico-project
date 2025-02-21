@@ -1,6 +1,6 @@
 #include "pico_display_2.hpp"
 #include "pico_graphics.hpp"
-#include "drivers/st7789/st7789.hpp"
+#include "st7789.hpp"
 #include "rgbled.hpp"
 #include "button.hpp"
 
@@ -29,6 +29,7 @@ int main() {
     // the backlight is driven via PWM and is gamma corrected by our
     // library to give a gorgeous linear brightness range.
     st7789.set_backlight(200);
+    led.set_rgb(0, 0, 0);
 
     while(true) {
         // detect if the A button is pressed (could be A, B, X, or Y)
