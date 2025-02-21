@@ -7,6 +7,7 @@ This is a small project to use a [Pico W](https://www.raspberrypi.com/documentat
 You can use it as a starting point for your own C++ projects.
 
 - [Prerequisites](#prerequisites)
+- [Requirements](#requirements)
 - [Preparing your build environment](#preparing-your-build-environment)
 - [Grab the Pimoroni libraries](#grab-the-pimoroni-libraries)
 - [Clone this boilerplate](#clone-this-boilerplate)
@@ -16,7 +17,12 @@ You can use it as a starting point for your own C++ projects.
 
 ## Prerequisites
 
-- [Visual Studio Code](https://code.visualstudio.com/) need to be installed, as it will be the IDE to code.
+- [Visual Studio Code](https://code.visualstudio.com/) needs to be installed, as it will be the IDE to code.
+
+## Components
+
+[ARM GNU Toolchain](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads) - ARM C/C++ Compiler and tools
+
 
 
 It's easier if you make a `pico` directory or similar in which you keep the SDK, Pimoroni Libraries and your projects alongside each other. This makes it easier to include libraries.

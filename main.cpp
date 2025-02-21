@@ -28,7 +28,7 @@ int main() {
     // set the backlight to a value between 0 and 255
     // the backlight is driven via PWM and is gamma corrected by our
     // library to give a gorgeous linear brightness range.
-    st7789.set_backlight(100);
+    st7789.set_backlight(200);
 
     while(true) {
         // detect if the A button is pressed (could be A, B, X, or Y)
@@ -57,7 +57,18 @@ int main() {
         graphics.set_pen(255, 255, 255);
         graphics.text("Los Amiga Rulez!", Point(text_rect.x, text_rect.y), text_rect.w);
 
+
+
+        // Clock
+        graphics.set_pen(50, 50, 50);
+        Rect clock_rect(170, 10, 140, 150);
+        graphics.rectangle(clock_rect);
+        clock_rect.deflate(10);
+        graphics.set_pen(255, 255, 255);
+        graphics.text("11:00 am",Point(clock_rect.x, clock_rect.y), clock_rect.w);
+
         // now we've done our drawing let's update the screen
         st7789.update(&graphics);
+
     }
 }
