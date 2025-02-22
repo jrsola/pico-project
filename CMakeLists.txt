@@ -55,7 +55,10 @@ add_executable(${NAME}
 add_subdirectory(${PIMORONI_PICO_PATH}/drivers/st7789 st7789)
 add_subdirectory(${PIMORONI_PICO_PATH}/libraries/pico_graphics pico_graphics)
 add_subdirectory(${PIMORONI_PICO_PATH}/libraries/pico_display_2 pico_display_2)
+
+#This is needed for LittleFS, FS_SIZE will adjust the space for the file system
 add_subdirectory(${PICO_DEV}/littlefs-lib littlefs)
+add_definitions(-DFS_SIZE=256*1024)
 
 # Include required libraries
 include(common/pimoroni_bus)

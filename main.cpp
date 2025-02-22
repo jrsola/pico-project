@@ -31,13 +31,46 @@ Button button_y(PicoDisplay2::Y);
 
 PicoDisplay2 display;
 
+// Define a datatype for RGB values
+struct LEDColor {
+    int r, g, b;
+    LEDColor(int red, int green, int blue) : r(red), g(green), b(blue) {}
+};
+
+// Define friendly names for colors
+const LEDColor RED(255,0,0);
+const LEDColor GREEN(0,255,0);
+const LEDColor BLUE(0,0,255);
+
+void led_blink(RGBLED led, LEDColor current_color, LEDColor blink_color, int blinks){
+    for (int i = 1; i <= blinks; i++){
+        led.set_rgb(blink_color.r,blink_color.g,blink_color.b);
+        sleep_ms(500);
+        led.set_rgb(current_color.r,current_color.g,current_color.b);
+        sleep_ms(500);
+    }
+}
+
+void init_screen(){
+
+}
+
+void init_wifi(){
+
+}
+
 int main() {
 
+    // Initialize PICO
     stdio_init_all();
 
-    // set the Led to OFF
-    led.set_rgb(0, 0, 0);
+    // Mount or format LittleFS partition
+    int pico_mount(bool format);
 
+    // set the Led to OFF
+    LEDColor current_led_color(0,0,0);
+    led.set_rgb(current_led_color.r,current_led_color.g,current_led_color.b);
+    
     // Initialize the WiFi chipset
     if(cyw43_arch_init()) {
         printf("Wi-Fi init failed"); // s'hauria de canviar per un error a la pantalla
@@ -52,7 +85,7 @@ int main() {
 
     // Check if the connection was successful
     if (ret == 0) {
-        led.set_rgb(0, 255, 0); // led green
+        led_blink(led, current_led_color, BLUE, 5);
     } else {
         led.set_rgb(255, 0, 0); // led red
     }
