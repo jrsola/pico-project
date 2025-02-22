@@ -55,9 +55,9 @@ void led_blink(RGBLED led, LEDColor current_color, LEDColor blink_color, int bli
     led.set_rgb(blink_color.r,blink_color.g,blink_color.b);
     for (int i = 1; i <= blinks; i++){
         led.set_brightness(255);
-        sleep_ms(1000);
+        sleep_ms(500);
         led.set_brightness(0);
-        sleep_ms(1000);
+        sleep_ms(500);
     }
     led.set_rgb(current_color.r,current_color.g,current_color.b);
     led.set_brightness(current_led_brightness);
@@ -92,14 +92,36 @@ void init_screen(){
     picoscreen.set_pen(255, 255, 255);
     picoscreen.text("SCREEN: OK", Point(text_rect.x, text_rect.y), text_rect.w);
     textx = text_rect.x;
-    texty = text_rect.y;
+    texty = text_rect.y+16;
     twidth = text_rect.w;
     st7789.update(&picoscreen);
-    
 }
 
 void init_wifi(){
-    picoscreen.text("WIFI: OK", Point(textx, texty+16), twidth);
+    if(cyw43_arch_init()) {
+        picoscreen.set_pen(255, 0, 0);
+        picoscreen.text("ERROR INITIALIZING WIFI CHIPSET", Point(textx, texty), twidth);
+    } else {
+        picoscreen.set_pen(255, 255, 255);
+        picoscreen.text("WIFI CHIPSET: OK", Point(textx, texty), twidth);
+    }
+    texty+=16;
+    st7789.update(&picoscreen);
+
+    // Initialize WiFi chipset
+    cyw43_arch_enable_sta_mode();
+
+    // Connect to WiFi network
+    if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 30000)) {
+        picoscreen.set_pen(255, 0, 0);
+        picoscreen.text("ERROR CONNECTING TO WIFI", Point(textx, texty), twidth);
+        led_blink(led, current_led_color, RED, 10);
+    } else {
+        picoscreen.set_pen(255, 255, 255);
+        picoscreen.text("WIFI NETWORK: OK", Point(textx, texty), twidth);
+        led_blink(led, current_led_color, GREEN, 10);
+    }
+    texty+=16;
     st7789.update(&picoscreen);
 }
 
@@ -116,24 +138,6 @@ int main() {
     
     init_wifi();
 
-    // Initialize the WiFi chipset
-    if(cyw43_arch_init()) {
-        printf("Wi-Fi init failed"); // s'hauria de canviar per un error a la pantalla
-        return -1;
-    }
-
-    // Initialize WiFi chipset
-    cyw43_arch_enable_sta_mode();
-    
-    // Connect to WiFi
-    int ret = cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 30000);
-
-    // Check if the connection was successful
-    if (ret == 0) {
-        led_blink(led, current_led_color, GREEN, 5);
-    } else {
-        led_blink(led, current_led_color, RED, 10);
-    }
 
     while(true) {
         // detect if the A button is pressed (could be A, B, X, or Y)
