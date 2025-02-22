@@ -89,7 +89,6 @@ int main() {
         graphics.text("Los Amiga Rulez!", Point(text_rect.x, text_rect.y), text_rect.w);
 
 
-
         // Clock
         graphics.set_pen(50, 50, 50);
         Rect clock_rect(170, 10, 140, 150);

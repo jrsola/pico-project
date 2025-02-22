@@ -23,6 +23,9 @@ You can use it as a starting point for your own C++ projects.
 
 [ARM GNU Toolchain](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads) - ARM C/C++ Compiler and tools
 
+CMake
+
+Ninja
 
 
 It's easier if you make a `pico` directory or similar in which you keep the SDK, Pimoroni Libraries and your projects alongside each other. This makes it easier to include libraries.
