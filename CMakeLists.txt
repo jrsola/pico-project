@@ -8,6 +8,7 @@ set(PICO_BOARD pico_w) # state the pico version here for WiFi to work
 # Get sure both SDKs (raspberry and pimoroni) are installed and usable
 include(pico_sdk_template.cmake)
 include(pimoroni_pico_template.cmake)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}) # for lwipopts.h 
 
 # Gooey boilerplate
 project(${NAME} C CXX ASM)
@@ -34,11 +35,17 @@ include(common/pimoroni_bus)
 include(drivers/rgbled/rgbled)
 include(drivers/button/button)
 
+#target_include_directories(${NAME} PRIVATE
+#    ${PICO_SDK_PATH}/lib/lwip/src/include
+#)
+
+
 # Don't forget to link the libraries you need!
 # <-- List libraries down here!
 target_link_libraries(${NAME}
+#    pico_cyw43_arch_none
+    pico_cyw43_arch_lwip_threadsafe_background
     pico_stdlib
-    pico_cyw43_arch_none
     hardware_clocks
     hardware_pio
     st7789
@@ -47,6 +54,23 @@ target_link_libraries(${NAME}
     rgbled
     button
 )
+
+# Load Default Wi-Fi values (SSID/PASSWORD) from wifi_credentials.txt
+set(WIFI_CREDENTIALS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/wifi_credentials.txt")
+if(EXISTS ${WIFI_CREDENTIALS_FILE})
+    file(READ ${WIFI_CREDENTIALS_FILE} FILE_CONTENT)
+    string(REGEX REPLACE "\n" ";" CREDENTIALS_LIST "${FILE_CONTENT}")
+    list(GET CREDENTIALS_LIST 0 WIFI_SSID)
+    list(GET CREDENTIALS_LIST 1 WIFI_PASSWORD)
+    message(STATUS "WIFI_SSID: ${WIFI_SSID}")
+    message(STATUS "WIFI_PASSWORD: ${WIFI_PASSWORD}")
+
+    add_definitions(-DWIFI_SSID="${WIFI_SSID}")
+    add_definitions(-DWIFI_PASSWORD="${WIFI_PASSWORD}")
+else()
+    message(STATUS "WARNING: WIFI CREDENTIALS NOT DEFINED")
+endif()
+
 
 # create map/bin/hex file etc.
 pico_add_extra_outputs(${NAME})

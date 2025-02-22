@@ -1,5 +1,9 @@
+#include <stdio.h>
+#include <string>
+
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
+
 #include "pico_display_2.hpp"
 #include "pico_graphics.hpp"
 #include "st7789.hpp"
@@ -27,11 +31,35 @@ PicoDisplay2 display;
 
 int main() {
 
+    stdio_init_all();
+
+    // set the Led to OFF
+    led.set_rgb(0, 0, 0);
+
+    // Initialize the WiFi chipset
+    if(cyw43_arch_init()) {
+        printf("Wi-Fi init failed"); // s'hauria de canviar per un error a la pantalla
+        return -1;
+    }
+
+    // Initialize WiFi chipset
+    cyw43_arch_enable_sta_mode();
+    
+    // Connect to WiFi
+    int ret = cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 30000);
+
+    // Check if the connection was successful
+    if (ret == 0) {
+        led.set_rgb(0, 255, 0); // led green
+    } else {
+        led.set_rgb(255, 0, 0); // led red
+    }
+
     // set the backlight to a value between 0 and 255
     // the backlight is driven via PWM and is gamma corrected by our
     // library to give a gorgeous linear brightness range.
     st7789.set_backlight(200);
-    led.set_rgb(0, 0, 0);
+    //led.set_rgb(0, 0, 0);
 
     while(true) {
         // detect if the A button is pressed (could be A, B, X, or Y)
