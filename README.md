@@ -6,4 +6,4 @@ Mostly to practice C++
 Credits:
 - [Raspberry Pi Pico SDK](https://github.com/raspberrypi/pico-sdk)
 - [Pimoroni Pico SDK](https://github.com/pimoroni/pimoroni-pico)
-- [Lurk101 LittleFS implemetation for Pico](git clone https://github.com/lurk101/littlefs-lib)
+- [Lurk101 LittleFS implemetation for Pico](https://github.com/lurk101/littlefs-lib)
