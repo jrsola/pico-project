@@ -4,6 +4,9 @@ cmake_minimum_required(VERSION 3.12)
 # Inside this directory you should have the PICO SDK, Pimoroni SDK, etc.
 if (NOT DEFINED ENV{PICO_DEV})
     message(FATAL_ERROR "Environment variable PICO_DEV is not set")
+else()
+    set(PICO_DEV $ENV{PICO_DEV})
+    message(STATUS "PICO_DEV is ${PICO_DEV}")
 endif()
 
 set(PICO_BOARD pico_w) # state the pico version here for WiFi to work
@@ -29,6 +32,8 @@ set(NAME pico-project) # <-- Name your project/executable here!
 # Get sure both SDKs (raspberry and pimoroni) are installed and usable
 include(pico_sdk.cmake)
 include(pimoroni_pico_sdk.cmake)
+
+# Other places to find headers we are going to need
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}) # for lwipopts.h 
 
 # Gooey boilerplate
@@ -50,15 +55,12 @@ add_executable(${NAME}
 add_subdirectory(${PIMORONI_PICO_PATH}/drivers/st7789 st7789)
 add_subdirectory(${PIMORONI_PICO_PATH}/libraries/pico_graphics pico_graphics)
 add_subdirectory(${PIMORONI_PICO_PATH}/libraries/pico_display_2 pico_display_2)
+add_subdirectory(${PICO_DEV}/littlefs-lib littlefs)
 
 # Include required libraries
 include(common/pimoroni_bus)
 include(drivers/rgbled/rgbled)
 include(drivers/button/button)
-
-#target_include_directories(${NAME} PRIVATE
-#    ${PICO_SDK_PATH}/lib/lwip/src/include
-#)
 
 # Don't forget to link the libraries you need!
 # <-- List libraries down here!
@@ -73,6 +75,8 @@ target_link_libraries(${NAME}
     pico_graphics
     rgbled
     button
+    littlefs-lib 
+    hardware_flash
 )
 
 # create map/bin/hex file etc.
