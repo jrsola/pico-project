@@ -1,3 +1,5 @@
+#include "pico/stdlib.h"
+#include "pico/cyw43_arch.h"
 #include "pico_display_2.hpp"
 #include "pico_graphics.hpp"
 #include "st7789.hpp"

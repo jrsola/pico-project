@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.12)
 # Change your executable name to something creative!
 set(NAME pico-project) # <-- Name your project/executable here!
 
+set(PICO_BOARD pico_w) # state the pico version here for WiFi to work
+
 # Get sure both SDKs (raspberry and pimoroni) are installed and usable
 include(pico_sdk_template.cmake)
 include(pimoroni_pico_template.cmake)
@@ -36,6 +38,8 @@ include(drivers/button/button)
 # <-- List libraries down here!
 target_link_libraries(${NAME}
     pico_stdlib
+    pico_cyw43_arch_none
+    hardware_clocks
     hardware_pio
     st7789
     pico_display_2
