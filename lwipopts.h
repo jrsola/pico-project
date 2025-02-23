@@ -1,6 +1,18 @@
 #ifndef _LWIPOPTS_EXAMPLE_COMMONH_H
 #define _LWIPOPTS_EXAMPLE_COMMONH_H
 
+// SNTP Settings
+#define SNTP_SERVER_DNS 1
+#define SNTP_MAX_SERVERS 1
+#define SNTP_CHECK_RESPONSE 0
+#define SNTP_COMP_ROUNDTRIP 1
+#define SNTP_STARTUP_DELAY 0
+
+/* 60 seconds is lower threshold by NTPv4 spec */
+#define SNTP_UPDATE_DELAY (64 * 1000)
+
+#define DHCP_START 1
+
 
 // Common settings used in most of the pico_w examples
 // (see https://www.nongnu.org/lwip/2_1_x/group__lwip__opts.html for details)
@@ -88,5 +100,6 @@
 #define PPP_DEBUG                   LWIP_DBG_OFF
 #define SLIP_DEBUG                  LWIP_DBG_OFF
 #define DHCP_DEBUG                  LWIP_DBG_OFF
+#define SNTP_DEBUG                  LWIP_DBG_ON
 
 #endif /* __LWIPOPTS_H__ */

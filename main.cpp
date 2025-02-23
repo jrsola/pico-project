@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <string>
+#include <time.h>
 
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
+#include "lwip/apps/sntp.h"
+#include "lwip/dns.h"
 
 #include "lfs.h"
 
@@ -51,15 +54,15 @@ const LEDColor WHITE(255,255,255);
 int current_led_brightness = 155;
 LEDColor current_led_color = BLACK;
 
-void led_blink(RGBLED led, LEDColor current_color, LEDColor blink_color, int blinks){
+void led_blink(LEDColor blink_color, int blinks){
     led.set_rgb(blink_color.r,blink_color.g,blink_color.b);
     for (int i = 1; i <= blinks; i++){
         led.set_brightness(255);
-        sleep_ms(500);
+        sleep_ms(250);
         led.set_brightness(0);
-        sleep_ms(500);
+        sleep_ms(250);
     }
-    led.set_rgb(current_color.r,current_color.g,current_color.b);
+    led.set_rgb(current_led_color.r,current_led_color.g,current_led_color.b);
     led.set_brightness(current_led_brightness);
 }
 
@@ -98,6 +101,8 @@ void init_screen(){
 }
 
 void init_wifi(){
+
+    // Initialize WiFi chipset
     if(cyw43_arch_init()) {
         picoscreen.set_pen(255, 0, 0);
         picoscreen.text("ERROR INITIALIZING WIFI CHIPSET", Point(textx, texty), twidth);
@@ -108,21 +113,78 @@ void init_wifi(){
     texty+=16;
     st7789.update(&picoscreen);
 
-    // Initialize WiFi chipset
+    // Enable chipset operation
     cyw43_arch_enable_sta_mode();
 
     // Connect to WiFi network
-    if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 30000)) {
-        picoscreen.set_pen(255, 0, 0);
-        picoscreen.text("ERROR CONNECTING TO WIFI", Point(textx, texty), twidth);
-        led_blink(led, current_led_color, RED, 10);
-    } else {
-        picoscreen.set_pen(255, 255, 255);
-        picoscreen.text("WIFI NETWORK: OK", Point(textx, texty), twidth);
-        led_blink(led, current_led_color, GREEN, 10);
+    for(int attempt = 0; attempt < 3; attempt++){
+        if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 30000)) {
+            std::string msg = "ERROR CONNECTING TO WIFI\n ATTEMPT: " + std::to_string(attempt+1);
+            picoscreen.set_pen(255, 0, 0);
+            picoscreen.text(msg, Point(textx, texty), twidth);
+            led_blink(RED, 5);
+            texty+=32;
+            st7789.update(&picoscreen);
+        } else {
+            picoscreen.set_pen(255, 255, 255);
+            picoscreen.text("WIFI NETWORK: OK", Point(textx, texty), twidth);
+            led_blink(GREEN, 5);
+            break;
+        }
     }
     texty+=16;
     st7789.update(&picoscreen);
+}
+
+void init_sntp() {
+    sntp_setoperatingmode(SNTP_OPMODE_POLL); // Poll mode for periodic updates
+    sntp_setservername(0, "time.cloudflare.com");   // Set NTP server
+    sntp_init();  // Start SNTP service
+
+    picoscreen.set_pen(255, 255, 255);
+    picoscreen.text("SNTP TIME SERVER: OK", Point(textx, texty), twidth);
+    texty+=16;
+}
+
+void update_time(uint32_t sec) {
+
+    picoscreen.set_pen(255, 255, 255);
+    picoscreen.text("I've been called", Point(textx, texty), twidth);
+
+/*     // Set up the timeval structure to set the system time
+    struct timeval tv;
+    tv.tv_sec = timestamp;  // Set seconds from SNTP timestamp
+    tv.tv_usec = 0;         // Microseconds set to 0
+
+    // Set the system time
+    if (settimeofday(&tv, NULL) == 0) {
+        // Successfully set the time, retrieve the updated time
+        struct tm *timeinfo = localtime(&tv.tv_sec); // Use tv_sec for local time
+
+        // Prepare the time string in "hh:mm:ss" format
+        char time_string[9]; // "hh:mm:ss" format (8 characters + null terminator)
+        snprintf(time_string, sizeof(time_string), "%02d:%02d:%02d",
+                 timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+
+        // Display the time on the screen
+        picoscreen.set_pen(255, 255, 255);
+        picoscreen.text(time_string, Point(textx, texty), twidth);
+    } else {
+        // Display error message if setting time fails
+        picoscreen.set_pen(255, 0, 0); // Set pen color for error message
+        picoscreen.text("Error setting NTP time", Point(textx, texty), twidth);
+    } */
+}
+
+// Get formatted current time as string
+std::string get_time() {
+    time_t now = time(NULL);
+    struct tm *timeinfo = localtime(&now);
+    
+    char buffer[9]; // "hh:mm:ss" format 9 chars (8+null)
+    snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d", timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+    
+    return std::string(buffer);
 }
 
 int main() {
@@ -137,16 +199,27 @@ int main() {
     int pico_mount(bool format);
     
     init_wifi();
+    init_sntp();
 
+    picoscreen.set_pen(255, 255, 255);
+    picoscreen.text("TIME IS: ", Point(textx, texty), twidth);
+    texty+=16;
 
+    std::string time_string; 
     while(true) {
         // detect if the A button is pressed (could be A, B, X, or Y)
         if(button_a.raw()) {
             // make the led glow green
             // parameters are red, green, blue all between 0 and 255
             // these are also gamma corrected
-            led.set_rgb(255, 0, 0);
+            led_blink(BLUE,10);
         }
-
+/*         picoscreen.set_pen(0, 0, 0);
+        picoscreen.text(time_string, Point(textx, texty), twidth);
+        time_string = get_time();
+        picoscreen.set_pen(255, 255, 255);
+        picoscreen.text(time_string, Point(textx, texty), twidth);
+        st7789.update(&picoscreen);
+        sleep_ms(500); */
     }
 }

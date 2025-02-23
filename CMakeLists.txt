@@ -11,6 +11,11 @@ endif()
 
 set(PICO_BOARD pico_w) # state the pico version here for WiFi to work
 
+# Enable lwIP and Wi-Fi support
+set(PICO_CYW43_SUPPORTED 1)
+set(PICO_LWIP 1)
+set(PICO_LWIP_THREADS 1)  # Enable thread-safe background network
+
 # Load Default Wi-Fi values (SSID/PASSWORD) from wifi_credentials.txt
 set(WIFI_CREDENTIALS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/wifi_credentials.txt")
 if(EXISTS ${WIFI_CREDENTIALS_FILE})
@@ -56,6 +61,7 @@ add_subdirectory(${PIMORONI_PICO_PATH}/drivers/st7789 st7789)
 add_subdirectory(${PIMORONI_PICO_PATH}/libraries/pico_graphics pico_graphics)
 add_subdirectory(${PIMORONI_PICO_PATH}/libraries/pico_display_2 pico_display_2)
 
+
 #This is needed for LittleFS, FS_SIZE will adjust the space for the file system
 add_subdirectory(${PICO_DEV}/littlefs-lib littlefs)
 add_definitions(-DFS_SIZE=256*1024)
@@ -80,6 +86,8 @@ target_link_libraries(${NAME}
     button
     littlefs-lib 
     hardware_flash
+    pico_lwip_http
+    pico_lwip_sntp
 )
 
 # create map/bin/hex file etc.
