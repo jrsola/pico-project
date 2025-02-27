@@ -17,11 +17,40 @@
 
 using namespace pimoroni;
 
+class MyPicoGraphics : public PicoGraphics_PenRGB332 {
+    public:
+        int textx, texty, twidth;
+        MyPicoGraphics(uint16_t width, uint16_t height, void *frame_buffer);
+        void clear();
+        void writeln(const std::string_view &t);
+};
+
+MyPicoGraphics::MyPicoGraphics(uint16_t width, uint16_t height, void *frame_buffer)
+    : PicoGraphics_PenRGB332(width, height, frame_buffer)    
+{
+    textx=10;
+    texty=10;
+    twidth=width-20-10;
+}
+
+void MyPicoGraphics::clear()
+{
+    PicoGraphics_PenRGB332::clear();
+    textx=10;
+    texty=10;
+}
+
+void MyPicoGraphics::writeln(const std::string_view &t)
+{
+    PicoGraphics_PenRGB332::text(t, pimoroni::Point(textx, texty), twidth);
+    texty+=16;
+}
+
 // Display driver
 ST7789 st7789(PicoDisplay2::WIDTH, PicoDisplay2::HEIGHT, ROTATE_0, false, get_spi_pins(BG_SPI_FRONT));
 
 // Graphics library - in RGB332 mode you get 256 colours and optional dithering for 75K RAM.
-PicoGraphics_PenRGB332 picoscreen(st7789.width, st7789.height, nullptr);
+MyPicoGraphics picoscreen(st7789.width, st7789.height, nullptr);
 
 // RGB LED
 RGBLED led(PicoDisplay2::LED_R, PicoDisplay2::LED_G, PicoDisplay2::LED_B);
@@ -67,8 +96,6 @@ void led_blink(LEDColor blink_color, int blinks){
 }
 
 // This will help us know where to write text at bootup
-int textx, texty, twidth;
-
 void init_screen(){
     // set the backlight to a value between 0 and 255
     // the backlight is driven via PWM and is gamma corrected by our
@@ -93,10 +120,7 @@ void init_screen(){
     // automatically word wrapping
     text_rect.deflate(10);
     picoscreen.set_pen(255, 255, 255);
-    picoscreen.text("SCREEN: OK", Point(text_rect.x, text_rect.y), text_rect.w);
-    textx = text_rect.x;
-    texty = text_rect.y+16;
-    twidth = text_rect.w;
+    picoscreen.writeln("SCREEN: OK");
     st7789.update(&picoscreen);
 }
 
@@ -105,12 +129,11 @@ void init_wifi(){
     // Initialize WiFi chipset
     if(cyw43_arch_init()) {
         picoscreen.set_pen(255, 0, 0);
-        picoscreen.text("ERROR INITIALIZING WIFI CHIPSET", Point(textx, texty), twidth);
+        picoscreen.writeln("ERROR INITIALIZING WIFI CHIPSET");
     } else {
         picoscreen.set_pen(255, 255, 255);
-        picoscreen.text("WIFI CHIPSET: OK", Point(textx, texty), twidth);
+        picoscreen.writeln("WIFI CHIPSET: OK");
     }
-    texty+=16;
     st7789.update(&picoscreen);
 
     // Enable chipset operation
@@ -121,18 +144,17 @@ void init_wifi(){
         if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 30000)) {
             std::string msg = "ERROR CONNECTING TO WIFI\n ATTEMPT: " + std::to_string(attempt+1);
             picoscreen.set_pen(255, 0, 0);
-            picoscreen.text(msg, Point(textx, texty), twidth);
+            picoscreen.writeln(msg);
+            picoscreen.writeln(" "); // texty+=32;
             led_blink(RED, 5);
-            texty+=32;
             st7789.update(&picoscreen);
         } else {
             picoscreen.set_pen(255, 255, 255);
-            picoscreen.text("WIFI NETWORK: OK", Point(textx, texty), twidth);
+            picoscreen.writeln("WIFI NETWORK: OK");
             led_blink(GREEN, 5);
             break;
         }
     }
-    texty+=16;
     st7789.update(&picoscreen);
 }
 
@@ -142,14 +164,13 @@ void init_sntp() {
     sntp_init();  // Start SNTP service
 
     picoscreen.set_pen(255, 255, 255);
-    picoscreen.text("SNTP TIME SERVER: OK", Point(textx, texty), twidth);
-    texty+=16;
+    picoscreen.writeln("SNTP TIME SERVER: OK");
 }
 
 void update_time(uint32_t sec) {
 
     picoscreen.set_pen(255, 255, 255);
-    picoscreen.text("I've been called", Point(textx, texty), twidth);
+    picoscreen.writeln("I've been called");
 
 /*     // Set up the timeval structure to set the system time
     struct timeval tv;
@@ -202,8 +223,7 @@ int main() {
     init_sntp();
 
     picoscreen.set_pen(255, 255, 255);
-    picoscreen.text("TIME IS: ", Point(textx, texty), twidth);
-    texty+=16;
+    picoscreen.writeln("TIME IS: ");
 
     std::string time_string; 
     while(true) {
