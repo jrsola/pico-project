@@ -165,13 +165,16 @@ void init_sntp() {
 
     picoscreen.set_pen(255, 255, 255);
     picoscreen.writeln("SNTP TIME SERVER: OK");
+    st7789.update(&picoscreen);
 }
 
-void update_time(uint32_t sec) {
+void sntp_callback(uint32_t sec) {
 
     picoscreen.set_pen(255, 255, 255);
     picoscreen.writeln("I've been called");
-
+    picoscreen.writeln(std::to_string(sec));
+    st7789.update(&picoscreen);
+}
 /*     // Set up the timeval structure to set the system time
     struct timeval tv;
     tv.tv_sec = timestamp;  // Set seconds from SNTP timestamp
@@ -195,7 +198,7 @@ void update_time(uint32_t sec) {
         picoscreen.set_pen(255, 0, 0); // Set pen color for error message
         picoscreen.text("Error setting NTP time", Point(textx, texty), twidth);
     } */
-}
+
 
 // Get formatted current time as string
 std::string get_time() {
@@ -222,8 +225,11 @@ int main() {
     init_wifi();
     init_sntp();
 
+    sleep_ms(10000);
     picoscreen.set_pen(255, 255, 255);
     picoscreen.writeln("TIME IS: ");
+    picoscreen.writeln(get_time());
+    st7789.update(&picoscreen);
 
     std::string time_string; 
     while(true) {
@@ -234,8 +240,8 @@ int main() {
             // these are also gamma corrected
             led_blink(BLUE,10);
         }
-/*         picoscreen.set_pen(0, 0, 0);
-        picoscreen.text(time_string, Point(textx, texty), twidth);
+         picoscreen.set_pen(0, 0, 0);
+/*         picoscreen.text(time_string, Point(0, 0), 100);
         time_string = get_time();
         picoscreen.set_pen(255, 255, 255);
         picoscreen.text(time_string, Point(textx, texty), twidth);
