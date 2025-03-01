@@ -124,9 +124,8 @@ void init_screen(){
     st7789.update(&picoscreen);
 }
 
+// Initialize WiFi chipset
 void init_wifi(){
-
-    // Initialize WiFi chipset
     if(cyw43_arch_init()) {
         picoscreen.set_pen(255, 0, 0);
         picoscreen.writeln("ERROR INITIALIZING WIFI CHIPSET");
@@ -142,10 +141,9 @@ void init_wifi(){
     // Connect to WiFi network
     for(int attempt = 0; attempt < 3; attempt++){
         if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 30000)) {
-            std::string msg = "ERROR CONNECTING TO WIFI\n ATTEMPT: " + std::to_string(attempt+1);
+            std::string msg = "ERROR IN WIFI NETWORK #" + std::to_string(attempt+1);
             picoscreen.set_pen(255, 0, 0);
             picoscreen.writeln(msg);
-            picoscreen.writeln(" "); // texty+=32;
             led_blink(RED, 5);
             st7789.update(&picoscreen);
         } else {
@@ -210,7 +208,6 @@ int main() {
         sleep_ms(500);
     }
 
-    sleep_ms(10000);
     picoscreen.set_pen(255, 255, 255);
     picoscreen.writeln("TIME IS: ");
     st7789.update(&picoscreen);
