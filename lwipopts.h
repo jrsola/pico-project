@@ -2,14 +2,27 @@
 #define _LWIPOPTS_EXAMPLE_COMMONH_H
 
 // SNTP Settings
+#define LWIP_SNTP 1
 #define SNTP_SERVER_DNS 1
 #define SNTP_MAX_SERVERS 1
 #define SNTP_CHECK_RESPONSE 0
 #define SNTP_COMP_ROUNDTRIP 1
 #define SNTP_STARTUP_DELAY 0
 
+// Standard function to set the time 
+/* #define SNTP_SET_SYSTEM_TIME_US(sec, us) do { \
+    struct timeval tv = { sec, us }; \
+    settimeofday(&tv, NULL); \
+} while (0) */
+// User defined callback function
+#include <time.h>
+extern void sntp_callback(time_t sec, suseconds_t us);
+#define SNTP_SET_SYSTEM_TIME_US(sec, us) sntp_callback(sec, us)
+
+
+
 /* 60 seconds is lower threshold by NTPv4 spec */
-#define SNTP_UPDATE_DELAY (64 * 1000)
+#define SNTP_UPDATE_DELAY (60 * 60 * 1000) //
 
 #define DHCP_START 1
 

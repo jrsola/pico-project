@@ -103,3 +103,12 @@ install(FILES
 set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
 set(CPACK_GENERATOR "ZIP" "TGZ")
 include(CPack)
+
+# Copy .uf2 file to project directory after building
+add_custom_target(copy_uf2 ALL
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_BINARY_DIR}/${NAME}.uf2
+        ${CMAKE_SOURCE_DIR}/${NAME}.uf2
+    COMMENT "${NAME}.uf2 copied to project directory"
+    DEPENDS ${NAME}
+)

@@ -158,9 +158,9 @@ void init_wifi(){
     st7789.update(&picoscreen);
 }
 
-void init_sntp() {
+void init_sntp(std::string sntp_server) {
     sntp_setoperatingmode(SNTP_OPMODE_POLL); // Poll mode for periodic updates
-    sntp_setservername(0, "time.cloudflare.com");   // Set NTP server
+    sntp_setservername(0, sntp_server.c_str());   // Set NTP server
     sntp_init();  // Start SNTP service
 
     picoscreen.set_pen(255, 255, 255);
@@ -168,37 +168,13 @@ void init_sntp() {
     st7789.update(&picoscreen);
 }
 
-void sntp_callback(uint32_t sec) {
-
+void sntp_callback(time_t sec, suseconds_t us) {
     picoscreen.set_pen(255, 255, 255);
-    picoscreen.writeln("I've been called");
-    picoscreen.writeln(std::to_string(sec));
+    picoscreen.writeln("TIME SYNCHRONIZED");
     st7789.update(&picoscreen);
+    struct timeval tv = {sec, us};
+    settimeofday(&tv, NULL);
 }
-/*     // Set up the timeval structure to set the system time
-    struct timeval tv;
-    tv.tv_sec = timestamp;  // Set seconds from SNTP timestamp
-    tv.tv_usec = 0;         // Microseconds set to 0
-
-    // Set the system time
-    if (settimeofday(&tv, NULL) == 0) {
-        // Successfully set the time, retrieve the updated time
-        struct tm *timeinfo = localtime(&tv.tv_sec); // Use tv_sec for local time
-
-        // Prepare the time string in "hh:mm:ss" format
-        char time_string[9]; // "hh:mm:ss" format (8 characters + null terminator)
-        snprintf(time_string, sizeof(time_string), "%02d:%02d:%02d",
-                 timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
-
-        // Display the time on the screen
-        picoscreen.set_pen(255, 255, 255);
-        picoscreen.text(time_string, Point(textx, texty), twidth);
-    } else {
-        // Display error message if setting time fails
-        picoscreen.set_pen(255, 0, 0); // Set pen color for error message
-        picoscreen.text("Error setting NTP time", Point(textx, texty), twidth);
-    } */
-
 
 // Get formatted current time as string
 std::string get_time() {
@@ -223,12 +199,20 @@ int main() {
     int pico_mount(bool format);
     
     init_wifi();
-    init_sntp();
+    init_sntp("pool.ntp.org");
+
+    picoscreen.set_pen(255, 255, 255);
+    picoscreen.writeln("SYNCRONIZING TIME...");
+    st7789.update(&picoscreen);
+    time_t now = 0;
+    while (now < 1000000000){
+        time(&now);
+        sleep_ms(500);
+    }
 
     sleep_ms(10000);
     picoscreen.set_pen(255, 255, 255);
     picoscreen.writeln("TIME IS: ");
-    picoscreen.writeln(get_time());
     st7789.update(&picoscreen);
 
     std::string time_string; 
@@ -240,12 +224,12 @@ int main() {
             // these are also gamma corrected
             led_blink(BLUE,10);
         }
-         picoscreen.set_pen(0, 0, 0);
-/*         picoscreen.text(time_string, Point(0, 0), 100);
+        picoscreen.set_pen(0, 0, 0);
+        picoscreen.text(time_string, Point(100, 200), 100);
         time_string = get_time();
         picoscreen.set_pen(255, 255, 255);
-        picoscreen.text(time_string, Point(textx, texty), twidth);
+        picoscreen.text(time_string, Point(100, 200), 100);
         st7789.update(&picoscreen);
-        sleep_ms(500); */
+        sleep_ms(500);
     }
 }
