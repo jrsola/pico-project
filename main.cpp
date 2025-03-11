@@ -53,7 +53,7 @@ ST7789 st7789(PicoDisplay2::WIDTH, PicoDisplay2::HEIGHT, ROTATE_0, false, get_sp
 MyPicoGraphics picoscreen(st7789.width, st7789.height, nullptr);
 
 // RGB LED
-RGBLED led(PicoDisplay2::LED_R, PicoDisplay2::LED_G, PicoDisplay2::LED_B);
+//RGBLED led(PicoDisplay2::LED_R, PicoDisplay2::LED_G, PicoDisplay2::LED_B);
 
 // And each button
 Button button_a(PicoDisplay2::A);
@@ -73,25 +73,70 @@ struct LEDColor {
 const int WIDTH = st7789.width;
 const int HEIGHT = st7789.height;
 
-// Define friendly names for colors
-const LEDColor RED(255,0,0);
-const LEDColor GREEN(0,255,0);
-const LEDColor BLUE(0,0,255);
-const LEDColor BLACK(0,0,0);
-const LEDColor WHITE(255,255,255);
+class Color {
+    private:
+        static inline const std::map<std::string, std::tuple<uint8_t, uint8_t, uint8_t>> color_map = {
+            {"black",   {0,0,0}},
+            {"white",   {255,255,255}},
+            {"red",     {255,0,0}},
+            {"green",   {0,255,0}},
+            {"blue",    {0,0,255}},
+            {"yellow",  {255,255,0}},
+            {"cyan",    {0,255,255}},
+            {"magenta", {255,0,255}},
+            {"orange",  {255,165,0}},
+            {"purple",  {128,0,128}},
+            {"pink",    {255,192,203}}
+            // Add more colors here if you need to
+        };
+
+    public:
+        static std::tuple<uint8_t, uint8_t, uint8_t> get_rgb(const std::string& color_name) {
+            auto match = color_map.find(color_name);
+            if (match != color_map.end()) {
+                return match->second;  
+            } else {
+                // If the color is not defined, we return white
+                return {255, 255, 255};
+            } 
+        }
+};
+
+class myLED {
+    private: 
+        RGBLED led;
+    
+    public:
+        // Constructor
+        myLED() : led(PicoDisplay2::LED_R, PicoDisplay2::LED_G, PicoDisplay2::LED_B){} 
+        // Methods
+        void set_rgb(const std::string& color_name) {
+            auto [r, g, b] = Color::get_rgb(color_name);
+            led.set_rgb(r,g,b);
+        }
+
+        void set_rgb(uint8_t r, uint8_t g, uint8_t b){
+            led.set_rgb(r, g, b);
+        }
+        void set_brightness(uint8_t brightness){
+            led.set_brightness(brightness);
+        };
+};
+
+myLED led;
 
 int current_led_brightness = 155;
-LEDColor current_led_color = BLACK;
+std::string current_color = "black";
 
-void led_blink(LEDColor blink_color, int blinks){
-    led.set_rgb(blink_color.r,blink_color.g,blink_color.b);
+void led_blink(std::string blink_color, int blinks){
+    led.set_rgb(blink_color);
     for (int i = 1; i <= blinks; i++){
         led.set_brightness(255);
         sleep_ms(250);
         led.set_brightness(0);
         sleep_ms(250);
     }
-    led.set_rgb(current_led_color.r,current_led_color.g,current_led_color.b);
+    led.set_rgb(blink_color);
     led.set_brightness(current_led_brightness);
 }
 
@@ -101,10 +146,9 @@ void init_screen(){
     // the backlight is driven via PWM and is gamma corrected by our
     // library to give a gorgeous linear brightness range.
     st7789.set_backlight(200);
-    led.set_rgb(0, 0, 0);
+
     // set the Led to OFF
-    LEDColor current_led_color(BLACK);
-    led.set_rgb(current_led_color.r,current_led_color.g,current_led_color.b);
+    led.set_rgb("black");
 
     // set the colour of the pen
     // parameters are red, green, blue all between 0 and 255
@@ -144,12 +188,12 @@ void init_wifi(){
             std::string msg = "ERROR IN WIFI NETWORK #" + std::to_string(attempt+1);
             picoscreen.set_pen(255, 0, 0);
             picoscreen.writeln(msg);
-            led_blink(RED, 5);
+            led_blink("red", 5);
             st7789.update(&picoscreen);
         } else {
             picoscreen.set_pen(255, 255, 255);
             picoscreen.writeln("WIFI NETWORK: OK");
-            led_blink(GREEN, 5);
+            led_blink("green", 5);
             break;
         }
     }
@@ -219,7 +263,7 @@ int main() {
             // make the led glow green
             // parameters are red, green, blue all between 0 and 255
             // these are also gamma corrected
-            led_blink(BLUE,10);
+            led_blink("blue",10);
         }
         picoscreen.set_pen(0, 0, 0);
         picoscreen.text(time_string, Point(100, 200), 100);
