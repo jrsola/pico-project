@@ -105,30 +105,40 @@ class Color {
 class myLED {
     private: 
         RGBLED led;
-        uint8_t brightness = 155;
+        uint8_t current_brightness = 155;
         bool is_blinking = false; // status about blinker
         uint8_t n_blinks = 0; // number of blinks left
         uint16_t blink_delay_ms = 0; // delay between blinks
         uint32_t last_blink_time = 0; // last time blink happened
         bool led_state = false;  // true = on, false = off
-        std::string current_color;
+        std::tuple<uint8_t, uint8_t, uint8_t> current_color;
     
     public:
         // Constructor
-        myLED() : led(PicoDisplay2::LED_R, PicoDisplay2::LED_G, PicoDisplay2::LED_B){} 
+        myLED() : led(PicoDisplay2::LED_R, PicoDisplay2::LED_G, PicoDisplay2::LED_B){
+            current_color = {0,0,0};
+            this->set_rgb(current_color);
+        }; 
         
         // Methods
         void set_rgb(const std::string& color_name) {
             auto [r, g, b] = Color::get_rgb(color_name);
-            led.set_rgb(r,g,b);
-        }
+            this->set_rgb(r,g,b);
+        };
+
+        void set_rgb(std::tuple<uint8_t, uint8_t, uint8_t> rgb_tuple){
+            auto [r, g, b] = rgb_tuple;
+            this->set_rgb(r, g, b);
+        };
 
         void set_rgb(uint8_t r, uint8_t g, uint8_t b){
+            this->current_color = {r, g, b}; 
             led.set_rgb(r, g, b);
-        }
+        };
+
         void set_brightness(uint8_t value){
             if (value <=255) {
-                brightness = value;
+                this->current_brightness = value;
                 led.set_brightness(value);
             } 
         };
@@ -136,17 +146,17 @@ class myLED {
         // LED on with fade-in
         void set_blink_on() {
             // Fade-in
-            for (uint8_t i = 0; i <= brightness; i++) {
+            for (uint8_t i = 0; i <= this->current_brightness; i++) {
                 led.set_brightness(i);
                 sleep_ms(5);  // Fade effect
             }
             n_blinks--;  
-        }
+        };
 
         // LED off with fade out
         void set_blink_off() {
             // Fade out
-            for (uint8_t i = brightness; i > 0; i--) {
+            for (uint8_t i = this->current_brightness; i > 0; i--) {
                 led.set_brightness(i);
                 sleep_ms(5);  // Fade effect
             }
@@ -189,22 +199,8 @@ class myLED {
         }
 };
 
+// Initialize the LED
 myLED led;
-
-int current_led_brightness = 155;
-std::string current_color = "black";
-
-void led_blink(std::string blink_color, int blinks){
-    led.set_rgb(blink_color);
-    for (int i = 1; i <= blinks; i++){
-        led.set_brightness(255);
-        sleep_ms(250);
-        led.set_brightness(0);
-        sleep_ms(250);
-    }
-    led.set_rgb(blink_color);
-    led.set_brightness(current_led_brightness);
-}
 
 // This will help us know where to write text at bootup
 void init_screen(){
@@ -212,9 +208,6 @@ void init_screen(){
     // the backlight is driven via PWM and is gamma corrected by our
     // library to give a gorgeous linear brightness range.
     st7789.set_backlight(200);
-
-    // set the Led to OFF
-    led.set_rgb("black");
 
     // set the colour of the pen
     // parameters are red, green, blue all between 0 and 255
@@ -254,12 +247,12 @@ void init_wifi(){
             std::string msg = "ERROR IN WIFI NETWORK #" + std::to_string(attempt+1);
             picoscreen.set_pen(255, 0, 0);
             picoscreen.writeln(msg);
-            led_blink("red", 5);
+            led.set_rgb("red");
             st7789.update(&picoscreen);
         } else {
             picoscreen.set_pen(255, 255, 255);
             picoscreen.writeln("WIFI NETWORK: OK");
-            led_blink("green", 5);
+            led.set_rgb("blue");
             break;
         }
     }
@@ -273,12 +266,14 @@ void init_sntp(std::string sntp_server) {
 
     picoscreen.set_pen(255, 255, 255);
     picoscreen.writeln("SNTP TIME SERVER: OK");
+    led.set_rgb("pink");
     st7789.update(&picoscreen);
 }
 
 void sntp_callback(time_t sec, suseconds_t us) {
     picoscreen.set_pen(255, 255, 255);
     picoscreen.writeln("TIME SYNCHRONIZED");
+    led.set_rgb("orange");
     st7789.update(&picoscreen);
     struct timeval tv = {sec, us};
     settimeofday(&tv, NULL);
