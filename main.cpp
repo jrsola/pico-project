@@ -105,10 +105,18 @@ class Color {
 class myLED {
     private: 
         RGBLED led;
+        uint8_t brightness = 155;
+        bool is_blinking = false; // status about blinker
+        uint8_t n_blinks = 0; // number of blinks left
+        uint16_t blink_delay_ms = 0; // delay between blinks
+        uint32_t last_blink_time = 0; // last time blink happened
+        bool led_state = false;  // true = on, false = off
+        std::string current_color;
     
     public:
         // Constructor
         myLED() : led(PicoDisplay2::LED_R, PicoDisplay2::LED_G, PicoDisplay2::LED_B){} 
+        
         // Methods
         void set_rgb(const std::string& color_name) {
             auto [r, g, b] = Color::get_rgb(color_name);
@@ -118,9 +126,67 @@ class myLED {
         void set_rgb(uint8_t r, uint8_t g, uint8_t b){
             led.set_rgb(r, g, b);
         }
-        void set_brightness(uint8_t brightness){
-            led.set_brightness(brightness);
+        void set_brightness(uint8_t value){
+            if (value <=255) {
+                brightness = value;
+                led.set_brightness(value);
+            } 
         };
+
+        // LED on with fade-in
+        void set_blink_on() {
+            // Fade-in
+            for (uint8_t i = 0; i <= brightness; i++) {
+                led.set_brightness(i);
+                sleep_ms(5);  // Fade effect
+            }
+            n_blinks--;  
+        }
+
+        // LED off with fade out
+        void set_blink_off() {
+            // Fade out
+            for (uint8_t i = brightness; i > 0; i--) {
+                led.set_brightness(i);
+                sleep_ms(5);  // Fade effect
+            }
+            led.set_brightness(0);  // Turn LED off completely
+            n_blinks--;  
+        }
+
+        // Starting a new blink
+        int new_blink(uint8_t blinks, uint16_t delay_ms) {
+            if (is_blinking) {
+                return -1;  // If it's already blinking then just return 
+            }
+            is_blinking = true;          // Blinking task started
+            n_blinks = blinks * 2;       // Each blink is 2 calls (on and off)
+            blink_delay_ms = delay_ms;   // Time between blinks
+            last_blink_time = millis();  // Initialize timer
+            return 0;                    // 0 to indicate good initialization
+        }
+
+        // Async blinking
+        int blink_update() {
+            if (!is_blinking || n_blinks == 0) {
+                return -1;  // If no blinking happening, just return
+            }
+
+            uint32_t current_time = millis();
+            if (current_time - last_blink_time >= blink_delay_ms) {
+                led_state = !led_state;  // Change state of led (on<>off)
+                if (led_state) {
+                    this->set_blink_on();  // Turn blink on 
+                } else {
+                    this->set_blink_off(); // Turn blink off
+                }
+                last_blink_time = current_time;  // Update timer
+            }
+            if (n_blinks == 0){
+                //return color to original state (to_do)
+            }
+            return n_blinks;  // blinks left
+        }
 };
 
 myLED led;
@@ -263,8 +329,11 @@ int main() {
             // make the led glow green
             // parameters are red, green, blue all between 0 and 255
             // these are also gamma corrected
-            led_blink("blue",10);
+            //led_blink("blue",10);
+            led.set_rgb("blue");
+            led.new_blink(5,500);
         }
+        led.blink_update();
         picoscreen.set_pen(0, 0, 0);
         picoscreen.text(time_string, Point(100, 200), 100);
         time_string = get_time();
