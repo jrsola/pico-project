@@ -52,8 +52,6 @@ ST7789 st7789(PicoDisplay2::WIDTH, PicoDisplay2::HEIGHT, ROTATE_0, false, get_sp
 // Graphics library - in RGB332 mode you get 256 colours and optional dithering for 75K RAM.
 MyPicoGraphics picoscreen(st7789.width, st7789.height, nullptr);
 
-// RGB LED
-//RGBLED led(PicoDisplay2::LED_R, PicoDisplay2::LED_G, PicoDisplay2::LED_B);
 
 // And each button
 Button button_a(PicoDisplay2::A);
@@ -62,12 +60,6 @@ Button button_x(PicoDisplay2::X);
 Button button_y(PicoDisplay2::Y);
 
 PicoDisplay2 display;
-
-// Define a datatype for RGB values
-struct LEDColor {
-    int r, g, b;
-    LEDColor(int red, int green, int blue) : r(red), g(green), b(blue) {}
-};
 
 // Define friendly names for screen dimensions
 const int WIDTH = st7789.width;
@@ -100,27 +92,66 @@ class Color {
                 return {255, 255, 255};
             } 
         }
+        static std::string get_color_name(const std::tuple<uint8_t, uint8_t, uint8_t>& rgb){
+            auto [r,g,b] = rgb;
+            for (const auto& [name, color] : color_map) {
+                auto [cr, cg, cb] = color;
+                if (r == cr && g == cg && b == cb){
+                    return name;
+                }
+            }
+            return "";
+        }
 };
 
 class myLED {
     private: 
-        RGBLED led;
-        uint8_t current_brightness = 155;
+        pimoroni::RGBLED led;
+        bool led_state = false;  // true = on, false = off
+        uint8_t led_brightness = 155;
+        std::tuple<uint8_t, uint8_t, uint8_t> led_color;
+
         bool is_blinking = false; // status about blinker
         uint8_t n_blinks = 0; // number of blinks left
         uint16_t blink_delay_ms = 0; // delay between blinks
         uint32_t last_blink_time = 0; // last time blink happened
-        bool led_state = false;  // true = on, false = off
-        std::tuple<uint8_t, uint8_t, uint8_t> current_color;
-    
+
     public:
         // Constructor
         myLED() : led(PicoDisplay2::LED_R, PicoDisplay2::LED_G, PicoDisplay2::LED_B){
-            current_color = {0,0,0};
-            this->set_rgb(current_color);
+            this->led_color = {0,0,0};
+            set_rgb(led_color);
         }; 
         
-        // Methods
+        // LED On/Off methods
+        void set_state(bool state){
+            if (state){
+                set_brightness(this->led_brightness);
+            } else {
+                set_brightness(0);
+            };
+        };
+
+        bool get_state(){
+            if(this->led_brightness){
+                return true;
+            }
+            return false;
+        }
+
+        // LED Brightness methods
+        void set_brightness(uint8_t value){
+            if (value <=255) {
+                this->led_brightness = value;
+                led.set_brightness(value);
+            } 
+        };
+
+        uint8_t get_brightness(){
+            return this->led_brightness;
+        }
+
+        // LED Color methods
         void set_rgb(const std::string& color_name) {
             auto [r, g, b] = Color::get_rgb(color_name);
             this->set_rgb(r,g,b);
@@ -128,41 +159,43 @@ class myLED {
 
         void set_rgb(std::tuple<uint8_t, uint8_t, uint8_t> rgb_tuple){
             auto [r, g, b] = rgb_tuple;
-            this->set_rgb(r, g, b);
+            this->set_rgb(r,g,b);
         };
 
         void set_rgb(uint8_t r, uint8_t g, uint8_t b){
-            this->current_color = {r, g, b}; 
-            led.set_rgb(r, g, b);
+            this->led_color = {r, g, b}; 
+            led.set_rgb(r,g,b);
         };
 
-        void set_brightness(uint8_t value){
-            if (value <=255) {
-                this->current_brightness = value;
-                led.set_brightness(value);
-            } 
-        };
+        std::tuple<uint8_t, uint8_t, uint8_t> get_rgb(){
+            return this->led_color;
+        }
 
-        // LED on with fade-in
+        // LED Blinking methods
         void set_blink_on() {
             // Fade-in
-            for (uint8_t i = 0; i <= this->current_brightness; i++) {
+            for (uint8_t i = 0; i <= this->led_brightness; i++) {
                 led.set_brightness(i);
-                sleep_ms(5);  // Fade effect
+                sleep_ms(2);  // Fade effect
             }
-            n_blinks--;  
+            this->n_blinks--;
         };
 
         // LED off with fade out
         void set_blink_off() {
             // Fade out
-            for (uint8_t i = this->current_brightness; i > 0; i--) {
+            for (uint8_t i = this->led_brightness; i > 0; i--) {
                 led.set_brightness(i);
-                sleep_ms(5);  // Fade effect
+                sleep_ms(2);  // Fade effect
             }
             led.set_brightness(0);  // Turn LED off completely
-            n_blinks--;  
-        }
+            this->n_blinks--;  
+            if (n_blinks == 0) {
+                this->is_blinking = false;
+                set_brightness(this->led_brightness);
+                //return color to original state (to_do)
+            }
+        };
 
         // Starting a new blink
         int new_blink(uint8_t blinks, uint16_t delay_ms) {
@@ -178,22 +211,17 @@ class myLED {
 
         // Async blinking
         int blink_update() {
-            if (!is_blinking || n_blinks == 0) {
-                return -1;  // If no blinking happening, just return
+            if (!is_blinking) {
+                return 0;  // If no blinking happening, just return
             }
 
-            uint32_t current_time = millis();
-            if (current_time - last_blink_time >= blink_delay_ms) {
-                led_state = !led_state;  // Change state of led (on<>off)
-                if (led_state) {
-                    this->set_blink_on();  // Turn blink on 
+            if (millis() - this->last_blink_time >= this->blink_delay_ms) {
+                if (this->get_state()) {
+                    this->set_blink_off();  
                 } else {
-                    this->set_blink_off(); // Turn blink off
+                    this->set_blink_on(); 
                 }
-                last_blink_time = current_time;  // Update timer
-            }
-            if (n_blinks == 0){
-                //return color to original state (to_do)
+                this->last_blink_time = millis();  // Update timer
             }
             return n_blinks;  // blinks left
         }
@@ -289,6 +317,8 @@ std::string get_time() {
     
     return std::string(buffer);
 }
+
+
 
 int main() {
 
