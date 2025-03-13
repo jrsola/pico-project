@@ -65,6 +65,25 @@ PicoDisplay2 display;
 const int WIDTH = st7789.width;
 const int HEIGHT = st7789.height;
 
+//Screen class
+class myScreen {
+    private:
+        pimoroni::PicoGraphics_PenRGB332 screen;
+    public:
+        // Constructor
+        myScreen(uint16_t width, uint16_t height, void *frame_buffer) :
+            screen(WIDTH, HEIGHT, frame_buffer) {
+        }
+        
+        // Methods (pel Sergi TODO)
+
+};
+
+class myButton {
+
+};
+
+
 class Color {
     private:
         static inline const std::map<std::string, std::tuple<uint8_t, uint8_t, uint8_t>> color_map = {
@@ -112,6 +131,7 @@ class myLED {
         std::tuple<uint8_t, uint8_t, uint8_t> led_color;
 
         bool is_blinking = false; // status about blinker
+        std::tuple<uint8_t, uint8_t, uint8_t> blink_color;
         uint8_t n_blinks = 0; // number of blinks left
         uint16_t blink_delay_ms = 0; // delay between blinks
         uint32_t last_blink_time = 0; // last time blink happened
@@ -120,7 +140,7 @@ class myLED {
         // Constructor
         myLED() : led(PicoDisplay2::LED_R, PicoDisplay2::LED_G, PicoDisplay2::LED_B){
             this->led_color = {0,0,0};
-            set_rgb(led_color);
+            this->set_rgb(led_color);
         }; 
         
         // LED On/Off methods
@@ -193,15 +213,16 @@ class myLED {
             if (n_blinks == 0) {
                 this->is_blinking = false;
                 set_brightness(this->led_brightness);
-                //return color to original state (to_do)
+                set_rgb(this->led_color);
             }
         };
 
         // Starting a new blink
-        int new_blink(uint8_t blinks, uint16_t delay_ms) {
+        int new_blink(uint8_t blinks, uint16_t delay_ms, const std::string& blink_color) {
             if (is_blinking) {
                 return -1;  // If it's already blinking then just return 
             }
+            set_rgb(blink_color); 
             is_blinking = true;          // Blinking task started
             n_blinks = blinks * 2;       // Each blink is 2 calls (on and off)
             blink_delay_ms = delay_ms;   // Time between blinks
@@ -355,8 +376,7 @@ int main() {
             // parameters are red, green, blue all between 0 and 255
             // these are also gamma corrected
             //led_blink("blue",10);
-            led.set_rgb("blue");
-            led.new_blink(5,500);
+            led.new_blink(5,500,"blue");
         }
         led.blink_update();
         picoscreen.set_pen(0, 0, 0);
