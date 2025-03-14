@@ -131,7 +131,7 @@ class myLED {
         std::tuple<uint8_t, uint8_t, uint8_t> led_color;
 
         bool is_blinking = false; // status about blinker
-        std::tuple<uint8_t, uint8_t, uint8_t> blink_color;
+        std::tuple<uint8_t, uint8_t, uint8_t> blink_precolor; // previous color before blink
         uint8_t n_blinks = 0; // number of blinks left
         uint16_t blink_delay_ms = 0; // delay between blinks
         uint32_t last_blink_time = 0; // last time blink happened
@@ -189,7 +189,7 @@ class myLED {
 
         std::tuple<uint8_t, uint8_t, uint8_t> get_rgb(){
             return this->led_color;
-        }
+        };
 
         // LED Blinking methods
         void set_blink_on() {
@@ -208,13 +208,8 @@ class myLED {
                 led.set_brightness(i);
                 sleep_ms(2);  // Fade effect
             }
-            led.set_brightness(0);  // Turn LED off completely
+            // led.set_brightness(0);  // Turn LED off completely
             this->n_blinks--;  
-            if (n_blinks == 0) {
-                this->is_blinking = false;
-                set_brightness(this->led_brightness);
-                set_rgb(this->led_color);
-            }
         };
 
         // Starting a new blink
@@ -222,13 +217,14 @@ class myLED {
             if (is_blinking) {
                 return -1;  // If it's already blinking then just return 
             }
+            this->blink_precolor=this->led_color;
             set_rgb(blink_color); 
             is_blinking = true;          // Blinking task started
             n_blinks = blinks * 2;       // Each blink is 2 calls (on and off)
             blink_delay_ms = delay_ms;   // Time between blinks
             last_blink_time = millis();  // Initialize timer
             return 0;                    // 0 to indicate good initialization
-        }
+        };
 
         // Async blinking
         int blink_update() {
@@ -243,9 +239,15 @@ class myLED {
                     this->set_blink_on(); 
                 }
                 this->last_blink_time = millis();  // Update timer
+                if (this->n_blinks == 0) {
+                    this->is_blinking = false;
+                    set_rgb(this->blink_precolor);
+                    set_brightness(this->led_brightness);
+                }
             }
+
             return n_blinks;  // blinks left
-        }
+        };
 };
 
 // Initialize the LED
@@ -340,7 +342,6 @@ std::string get_time() {
 }
 
 
-
 int main() {
 
     // Initialize Pico
@@ -368,7 +369,8 @@ int main() {
     picoscreen.writeln("TIME IS: ");
     st7789.update(&picoscreen);
 
-    std::string time_string; 
+    std::string time_string;
+    led.set_rgb("magenta");
     while(true) {
         // detect if the A button is pressed (could be A, B, X, or Y)
         if(button_a.raw()) {
