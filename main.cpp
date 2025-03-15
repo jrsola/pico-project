@@ -387,6 +387,6 @@ int main() {
         picoscreen.set_pen(255, 255, 255);
         picoscreen.text(time_string, Point(100, 200), 100);
         st7789.update(&picoscreen);
-        sleep_ms(500);
+        sleep_ms(50);
     }
 }

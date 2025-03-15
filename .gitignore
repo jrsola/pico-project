@@ -1,4 +1,5 @@
 /.vscode
 /build
 wifi_credentials.txt
+picotool.exe
 *.uf2

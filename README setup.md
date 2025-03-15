@@ -38,6 +38,8 @@ CMake
 
 Ninja
 
+[Picotool binaries](https://github.com/raspberrypi/pico-sdk-tools/releases)
+
 
 ## Preparing your build environment
 
