@@ -52,7 +52,6 @@ ST7789 st7789(PicoDisplay2::WIDTH, PicoDisplay2::HEIGHT, ROTATE_0, false, get_sp
 // Graphics library - in RGB332 mode you get 256 colours and optional dithering for 75K RAM.
 MyPicoGraphics picoscreen(st7789.width, st7789.height, nullptr);
 
-
 // And each button
 Button button_a(PicoDisplay2::A);
 Button button_b(PicoDisplay2::B);
@@ -60,29 +59,6 @@ Button button_x(PicoDisplay2::X);
 Button button_y(PicoDisplay2::Y);
 
 PicoDisplay2 display;
-
-// Define friendly names for screen dimensions
-const int WIDTH = st7789.width;
-const int HEIGHT = st7789.height;
-
-//Screen class
-class myScreen {
-    private:
-        pimoroni::PicoGraphics_PenRGB332 screen;
-    public:
-        // Constructor
-        myScreen(uint16_t width, uint16_t height, void *frame_buffer) :
-            screen(WIDTH, HEIGHT, frame_buffer) {
-        }
-        
-        // Methods (pel Sergi TODO)
-
-};
-
-class myButton {
-
-};
-
 
 class Color {
     private:
@@ -121,6 +97,56 @@ class Color {
             }
             return "";
         }
+};
+
+//Screen class
+class myScreen {
+    private:
+        pimoroni::PicoGraphics_PenRGB332 screen;
+        const uint16_t WIDTH = st7789.width;
+        const uint16_t HEIGHT = st7789.height;
+        uint8_t backlight = 200; // default screen backlight
+        std::tuple<uint8_t, uint8_t, uint8_t> pen_color;
+
+    public:
+        // Constructor
+        myScreen() : screen(WIDTH, HEIGHT, nullptr) {
+                st7789.set_backlight(this->backlight);
+                this->set_pen("red");
+                this->clear();
+            }
+
+        // Methods for pen color
+        void set_pen(const std::string& color_name) {
+            auto [r, g, b] = Color::get_rgb(color_name);
+            this->set_pen(r,g,b);
+        };
+        void set_pen(std::tuple<uint8_t, uint8_t, uint8_t> rgb_tuple){
+            auto [r, g, b] = rgb_tuple;
+            this->set_pen(r,g,b);
+        };
+        void set_pen(uint8_t r, uint8_t g, uint8_t b){
+            this->pen_color = {r, g, b};
+            screen.set_pen(r,g,b);
+        };
+
+        std::tuple<uint8_t, uint8_t, uint8_t> get_pen(){
+            return this->pen_color;
+        };
+
+        void pixel(const Point &p){
+            screen.pixel(p);
+        }
+        void clear(){
+            screen.clear();
+        }
+};
+// Instantiate Screen
+myScreen screen;
+
+
+class myButton {
+
 };
 
 class myLED {
@@ -249,13 +275,13 @@ class myLED {
             return n_blinks;  // blinks left
         };
 };
-
-// Initialize the LED
+// Instantiate LED
 myLED led;
+
 
 // This will help us know where to write text at bootup
 void init_screen(){
-    // set the backlight to a value between 0 and 255
+ /*    // set the backlight to a value between 0 and 255
     // the backlight is driven via PWM and is gamma corrected by our
     // library to give a gorgeous linear brightness range.
     st7789.set_backlight(200);
@@ -264,11 +290,11 @@ void init_screen(){
     // parameters are red, green, blue all between 0 and 255
     picoscreen.set_pen(0, 255, 0);
     // fill the screen with the current pen colour
-    picoscreen.clear();
+    picoscreen.clear(); */
 
     // draw a box to put some text in
     picoscreen.set_pen(0, 0, 0);
-    Rect text_rect(10, 10, WIDTH-20, HEIGHT-20);
+    Rect text_rect(10, 10, st7789.width-20, st7789.height-20);
     picoscreen.rectangle(text_rect);
     // write some text inside the box with 10 pixels of margin
     // automatically word wrapping
@@ -340,7 +366,6 @@ std::string get_time() {
     
     return std::string(buffer);
 }
-
 
 int main() {
 
