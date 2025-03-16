@@ -17,12 +17,6 @@
 
 using namespace pimoroni;
 
-// And each button
-Button button_a(PicoDisplay2::A);
-Button button_b(PicoDisplay2::B);
-Button button_x(PicoDisplay2::X);
-Button button_y(PicoDisplay2::Y);
-
 class Color {
     private:
         static inline const std::map<std::string, std::tuple<uint8_t, uint8_t, uint8_t>> color_map = {
@@ -36,7 +30,11 @@ class Color {
             {"magenta", {255,0,255}},
             {"orange",  {255,165,0}},
             {"purple",  {128,0,128}},
-            {"pink",    {255,192,203}}
+            {"pink",    {255,192,203}},
+            {"light blue",    {173,216,230}},
+            {"light green",    {144,238,144}},
+            {"dark blue",    {0,0,139}},
+            {"dark green",    {1,50,32}}
             // Add more colors here if you need to
         };
 
@@ -137,21 +135,34 @@ class myScreen {
         void rectangle(int x, int y, int width, int height) {
             screen.rectangle(Rect(x,y,width,height));
         }
-        void writeln(const std::string_view &t)
+        void writeln(const std::string_view &t, const std::string& color_name = "")
         {
-            this->write(t);
+            this->textx=10;
+            this->write(t, color_name);
             this->texty+=16;
         }
-        void write(const std::string_view &t)
+        void write(const std::string_view &t, const std::string& color_name = "")
         {
+            if (!color_name.empty()){
+                this->set_pen(color_name);
+            }   
             screen.text(t, pimoroni::Point(this->textx+5, this->texty+2), this->twidth);
             this->update();
         }
-
+        void writechar(char c, const std::string& color_name = "")
+        {
+            this->write(std::string(1,c), color_name);
+            this->textx+=16;
+        }
 };
 // Instantiate Screen
 myScreen screen;
 
+// And each button
+Button button_a(PicoDisplay2::A);
+Button button_b(PicoDisplay2::B);
+Button button_x(PicoDisplay2::X);
+Button button_y(PicoDisplay2::Y);
 
 class myButton {
     // TO-DO
@@ -287,25 +298,22 @@ myLED led;
 
 void init_screen(){
     screen.set_brightness(200);
-    screen.set_pen("green");
+    screen.set_pen("light blue");
     screen.clear();
     screen.update();
     sleep_ms(1000);
-    screen.set_pen("black");
+    screen.set_pen("dark blue");
     screen.rectangle(10,10,screen.get_width()-20, screen.get_height()-20);
     screen.update(); 
-    screen.set_pen("white");
-    screen.writeln("SCREEN: OK");
+    screen.writeln("SCREEN: OK","white");
 }
 
 // Initialize WiFi chipset
 void init_wifi(){
     if(cyw43_arch_init()) {
-        screen.set_pen("red");
-        screen.writeln("ERROR INITIALIZING WIFI CHIPSET");
+        screen.writeln("ERROR INITIALIZING WIFI CHIPSET", "red");
     } else {
-        screen.set_pen("white");
-        screen.writeln("WIFI CHIPSET: OK");
+        screen.writeln("WIFI CHIPSET: OK", "white");
     }
 
     // Enable chipset operation
@@ -315,11 +323,9 @@ void init_wifi(){
     for(int attempt = 0; attempt < 3; attempt++){
         if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 30000)) {
             std::string msg = "ERROR IN WIFI NETWORK #" + std::to_string(attempt+1);
-            screen.set_pen("red");
-            screen.writeln(msg);
+            screen.writeln(msg, "red");
         } else {
-            screen.set_pen("white");
-            screen.writeln("WIFI NETWORK: OK");
+            screen.writeln("WIFI NETWORK: OK", "white");
             break;
         }
     }
@@ -330,14 +336,13 @@ void init_sntp(std::string sntp_server) {
     sntp_setservername(0, sntp_server.c_str());   // Set NTP server
     sntp_init();  // Start SNTP service
 
-    screen.set_pen("white");
-    screen.writeln("SNTP TIME SERVER: OK");
+    screen.writeln("SNTP SERVER FOUND: OK", "pink");
     led.set_rgb("pink");
 }
 
+bool time_synched = false;
 void sntp_callback(time_t sec, suseconds_t us) {
-    screen.set_pen("white");
-    screen.writeln("TIME SYNCHRONIZED: OK");
+    time_synched = true;
     led.set_rgb("orange");
     struct timeval tv = {sec, us};
     settimeofday(&tv, NULL);
@@ -368,16 +373,14 @@ int main() {
     init_wifi();
     init_sntp("pool.ntp.org");
 
-    screen.set_pen("white");
     screen.writeln("SYNCRONIZING TIME...");
-    time_t now = 0;
-    while (now < 1000000000){
-        time(&now);
-        sleep_ms(500);
+    while (!time_synched) {
+        screen.writechar('.');
     }
+    screen.writeln("");
+    screen.writeln("TIME SYCHRONIZED","green");
 
-    screen.set_pen("white");
-    screen.writeln("TIME IS: ");
+    screen.writeln("TIME IS: ", "yellow");
 
     std::string time_string;
     led.set_rgb("magenta");
@@ -391,11 +394,9 @@ int main() {
             led.new_blink(5,500,"blue");
         }
         led.blink_update();
-        screen.set_pen("black");
-        screen.write(time_string);
+        screen.write(time_string, "dark blue");
         time_string = get_time();
-        screen.set_pen("white");
-        screen.write(time_string);
+        screen.write(time_string, "white");
         sleep_ms(50);
     } 
 }
