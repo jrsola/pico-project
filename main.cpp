@@ -17,7 +17,7 @@
 
 using namespace pimoroni;
 
-class MyPicoGraphics : public PicoGraphics_PenRGB332 {
+/* class MyPicoGraphics : public PicoGraphics_PenRGB332 {
     public:
         int textx, texty, twidth;
         MyPicoGraphics(uint16_t width, uint16_t height, void *frame_buffer);
@@ -47,10 +47,11 @@ void MyPicoGraphics::writeln(const std::string_view &t)
 }
 
 // Display driver
-ST7789 st7789(PicoDisplay2::WIDTH, PicoDisplay2::HEIGHT, ROTATE_0, false, get_spi_pins(BG_SPI_FRONT));
+//ST7789 st7789(PicoDisplay2::WIDTH, PicoDisplay2::HEIGHT, ROTATE_0, false, get_spi_pins(BG_SPI_FRONT));
 
 // Graphics library - in RGB332 mode you get 256 colours and optional dithering for 75K RAM.
 MyPicoGraphics picoscreen(st7789.width, st7789.height, nullptr);
+ */
 
 // And each button
 Button button_a(PicoDisplay2::A);
@@ -102,19 +103,44 @@ class Color {
 //Screen class
 class myScreen {
     private:
-        pimoroni::PicoGraphics_PenRGB332 screen;
-        const uint16_t WIDTH = st7789.width;
-        const uint16_t HEIGHT = st7789.height;
-        uint8_t backlight = 200; // default screen backlight
+        const uint16_t WIDTH = 320;
+        const uint16_t HEIGHT = 240;
+        uint8_t backlight = 255; // default screen backlight
         std::tuple<uint8_t, uint8_t, uint8_t> pen_color;
+        ST7789 st7789; // screen driver
+        std::vector<uint8_t> frame_buffer;
+        pimoroni::PicoGraphics_PenRGB332 screen; // order is important, this goes after frame_buffer
+        int textx, texty, twidth;
 
-    public:
+        public:
         // Constructor
-        myScreen() : screen(WIDTH, HEIGHT, nullptr) {
-                st7789.set_backlight(this->backlight);
-                this->set_pen("red");
+        myScreen(): frame_buffer(WIDTH*HEIGHT),
+                    screen(WIDTH, HEIGHT, frame_buffer.data()), 
+                    st7789(WIDTH, HEIGHT, ROTATE_0, false, get_spi_pins(BG_SPI_FRONT))
+            {
+                this->set_brightness(this->backlight);
+                this->set_pen("white");
                 this->clear();
+                this->update();
+                sleep_ms(2000);
             }
+        
+        // Methods to return screen dimensions
+        uint16_t get_width(){
+            return WIDTH;
+        }
+        uint16_t get_height(){
+            return HEIGHT;
+        }
+
+        // Methods for screen brightness
+        void set_brightness(uint8_t backlight){
+            this->backlight = backlight;
+            st7789.set_backlight(this->backlight);
+        }
+        uint8_t get_brightness(){
+            return this->backlight;
+        }
 
         // Methods for pen color
         void set_pen(const std::string& color_name) {
@@ -140,6 +166,13 @@ class myScreen {
         void clear(){
             screen.clear();
         }
+        void update(){
+            st7789.update(&screen);
+        }
+        void rectangle(int x, int y, int width, int height) {
+            screen.rectangle(Rect(x,y,width,height));
+        }
+
 };
 // Instantiate Screen
 myScreen screen;
@@ -281,18 +314,16 @@ myLED led;
 
 // This will help us know where to write text at bootup
 void init_screen(){
- /*    // set the backlight to a value between 0 and 255
-    // the backlight is driven via PWM and is gamma corrected by our
-    // library to give a gorgeous linear brightness range.
-    st7789.set_backlight(200);
+    screen.set_brightness(200);
+    screen.set_pen("green");
+    screen.clear();
+    screen.update();
+    sleep_ms(1000);
+    screen.set_pen("black");
+    screen.rectangle(10,10,screen.get_width()-20, screen.get_height()-20);
+    screen.update(); 
 
-    // set the colour of the pen
-    // parameters are red, green, blue all between 0 and 255
-    picoscreen.set_pen(0, 255, 0);
-    // fill the screen with the current pen colour
-    picoscreen.clear(); */
-
-    // draw a box to put some text in
+/*     // draw a box to put some text in
     picoscreen.set_pen(0, 0, 0);
     Rect text_rect(10, 10, st7789.width-20, st7789.height-20);
     picoscreen.rectangle(text_rect);
@@ -301,10 +332,10 @@ void init_screen(){
     text_rect.deflate(10);
     picoscreen.set_pen(255, 255, 255);
     picoscreen.writeln("SCREEN: OK");
-    st7789.update(&picoscreen);
+    st7789.update(&picoscreen); */
 }
 
-// Initialize WiFi chipset
+/* // Initialize WiFi chipset
 void init_wifi(){
     if(cyw43_arch_init()) {
         picoscreen.set_pen(255, 0, 0);
@@ -365,7 +396,7 @@ std::string get_time() {
     snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d", timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
     
     return std::string(buffer);
-}
+} */
 
 int main() {
 
@@ -375,7 +406,7 @@ int main() {
     // Initialize screen 
     init_screen();
  
-    // Mount or format LittleFS partition
+/*     // Mount or format LittleFS partition
     int pico_mount(bool format);
     
     init_wifi();
@@ -413,5 +444,5 @@ int main() {
         picoscreen.text(time_string, Point(100, 200), 100);
         st7789.update(&picoscreen);
         sleep_ms(50);
-    }
+    } */
 }
