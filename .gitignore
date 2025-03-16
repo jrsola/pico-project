@@ -1,7 +1,7 @@
 /.vscode
 /build
 .DS_Store
+CMakeLists.txt
 wifi_credentials.txt
 picotool.exe
 *.uf2
-CMakeLists.txt
