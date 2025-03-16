@@ -17,49 +17,11 @@
 
 using namespace pimoroni;
 
-/* class MyPicoGraphics : public PicoGraphics_PenRGB332 {
-    public:
-        int textx, texty, twidth;
-        MyPicoGraphics(uint16_t width, uint16_t height, void *frame_buffer);
-        void clear();
-        void writeln(const std::string_view &t);
-};
-
-MyPicoGraphics::MyPicoGraphics(uint16_t width, uint16_t height, void *frame_buffer)
-    : PicoGraphics_PenRGB332(width, height, frame_buffer)    
-{
-    textx=10;
-    texty=10;
-    twidth=width-20-10;
-}
-
-void MyPicoGraphics::clear()
-{
-    PicoGraphics_PenRGB332::clear();
-    textx=10;
-    texty=10;
-}
-
-void MyPicoGraphics::writeln(const std::string_view &t)
-{
-    PicoGraphics_PenRGB332::text(t, pimoroni::Point(textx, texty), twidth);
-    texty+=16;
-}
-
-// Display driver
-//ST7789 st7789(PicoDisplay2::WIDTH, PicoDisplay2::HEIGHT, ROTATE_0, false, get_spi_pins(BG_SPI_FRONT));
-
-// Graphics library - in RGB332 mode you get 256 colours and optional dithering for 75K RAM.
-MyPicoGraphics picoscreen(st7789.width, st7789.height, nullptr);
- */
-
 // And each button
 Button button_a(PicoDisplay2::A);
 Button button_b(PicoDisplay2::B);
 Button button_x(PicoDisplay2::X);
 Button button_y(PicoDisplay2::Y);
-
-PicoDisplay2 display;
 
 class Color {
     private:
@@ -164,6 +126,9 @@ class myScreen {
             screen.pixel(p);
         }
         void clear(){
+            this->textx=10;
+            this->texty=10;
+            this->twidth=WIDTH-20-10; 
             screen.clear();
         }
         void update(){
@@ -172,6 +137,16 @@ class myScreen {
         void rectangle(int x, int y, int width, int height) {
             screen.rectangle(Rect(x,y,width,height));
         }
+        void writeln(const std::string_view &t)
+        {
+            this->write(t);
+            this->texty+=16;
+        }
+        void write(const std::string_view &t)
+        {
+            screen.text(t, pimoroni::Point(this->textx+5, this->texty+2), this->twidth);
+            this->update();
+        }
 
 };
 // Instantiate Screen
@@ -179,7 +154,7 @@ myScreen screen;
 
 
 class myButton {
-
+    // TO-DO
 };
 
 class myLED {
@@ -304,15 +279,12 @@ class myLED {
                     set_brightness(this->led_brightness);
                 }
             }
-
             return n_blinks;  // blinks left
         };
 };
 // Instantiate LED
 myLED led;
 
-
-// This will help us know where to write text at bootup
 void init_screen(){
     screen.set_brightness(200);
     screen.set_pen("green");
@@ -322,29 +294,19 @@ void init_screen(){
     screen.set_pen("black");
     screen.rectangle(10,10,screen.get_width()-20, screen.get_height()-20);
     screen.update(); 
-
-/*     // draw a box to put some text in
-    picoscreen.set_pen(0, 0, 0);
-    Rect text_rect(10, 10, st7789.width-20, st7789.height-20);
-    picoscreen.rectangle(text_rect);
-    // write some text inside the box with 10 pixels of margin
-    // automatically word wrapping
-    text_rect.deflate(10);
-    picoscreen.set_pen(255, 255, 255);
-    picoscreen.writeln("SCREEN: OK");
-    st7789.update(&picoscreen); */
+    screen.set_pen("white");
+    screen.writeln("SCREEN: OK");
 }
 
-/* // Initialize WiFi chipset
+// Initialize WiFi chipset
 void init_wifi(){
     if(cyw43_arch_init()) {
-        picoscreen.set_pen(255, 0, 0);
-        picoscreen.writeln("ERROR INITIALIZING WIFI CHIPSET");
+        screen.set_pen("red");
+        screen.writeln("ERROR INITIALIZING WIFI CHIPSET");
     } else {
-        picoscreen.set_pen(255, 255, 255);
-        picoscreen.writeln("WIFI CHIPSET: OK");
+        screen.set_pen("white");
+        screen.writeln("WIFI CHIPSET: OK");
     }
-    st7789.update(&picoscreen);
 
     // Enable chipset operation
     cyw43_arch_enable_sta_mode();
@@ -353,18 +315,14 @@ void init_wifi(){
     for(int attempt = 0; attempt < 3; attempt++){
         if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 30000)) {
             std::string msg = "ERROR IN WIFI NETWORK #" + std::to_string(attempt+1);
-            picoscreen.set_pen(255, 0, 0);
-            picoscreen.writeln(msg);
-            led.set_rgb("red");
-            st7789.update(&picoscreen);
+            screen.set_pen("red");
+            screen.writeln(msg);
         } else {
-            picoscreen.set_pen(255, 255, 255);
-            picoscreen.writeln("WIFI NETWORK: OK");
-            led.set_rgb("blue");
+            screen.set_pen("white");
+            screen.writeln("WIFI NETWORK: OK");
             break;
         }
     }
-    st7789.update(&picoscreen);
 }
 
 void init_sntp(std::string sntp_server) {
@@ -372,17 +330,15 @@ void init_sntp(std::string sntp_server) {
     sntp_setservername(0, sntp_server.c_str());   // Set NTP server
     sntp_init();  // Start SNTP service
 
-    picoscreen.set_pen(255, 255, 255);
-    picoscreen.writeln("SNTP TIME SERVER: OK");
+    screen.set_pen("white");
+    screen.writeln("SNTP TIME SERVER: OK");
     led.set_rgb("pink");
-    st7789.update(&picoscreen);
 }
 
 void sntp_callback(time_t sec, suseconds_t us) {
-    picoscreen.set_pen(255, 255, 255);
-    picoscreen.writeln("TIME SYNCHRONIZED");
+    screen.set_pen("white");
+    screen.writeln("TIME SYNCHRONIZED: OK");
     led.set_rgb("orange");
-    st7789.update(&picoscreen);
     struct timeval tv = {sec, us};
     settimeofday(&tv, NULL);
 }
@@ -396,7 +352,7 @@ std::string get_time() {
     snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d", timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
     
     return std::string(buffer);
-} */
+} 
 
 int main() {
 
@@ -406,24 +362,22 @@ int main() {
     // Initialize screen 
     init_screen();
  
-/*     // Mount or format LittleFS partition
+    // Mount or format LittleFS partition
     int pico_mount(bool format);
     
     init_wifi();
     init_sntp("pool.ntp.org");
 
-    picoscreen.set_pen(255, 255, 255);
-    picoscreen.writeln("SYNCRONIZING TIME...");
-    st7789.update(&picoscreen);
+    screen.set_pen("white");
+    screen.writeln("SYNCRONIZING TIME...");
     time_t now = 0;
     while (now < 1000000000){
         time(&now);
         sleep_ms(500);
     }
 
-    picoscreen.set_pen(255, 255, 255);
-    picoscreen.writeln("TIME IS: ");
-    st7789.update(&picoscreen);
+    screen.set_pen("white");
+    screen.writeln("TIME IS: ");
 
     std::string time_string;
     led.set_rgb("magenta");
@@ -437,12 +391,11 @@ int main() {
             led.new_blink(5,500,"blue");
         }
         led.blink_update();
-        picoscreen.set_pen(0, 0, 0);
-        picoscreen.text(time_string, Point(100, 200), 100);
+        screen.set_pen("black");
+        screen.write(time_string);
         time_string = get_time();
-        picoscreen.set_pen(255, 255, 255);
-        picoscreen.text(time_string, Point(100, 200), 100);
-        st7789.update(&picoscreen);
+        screen.set_pen("white");
+        screen.write(time_string);
         sleep_ms(50);
-    } */
+    } 
 }

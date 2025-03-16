@@ -1,5 +1,17 @@
 cmake_minimum_required(VERSION 3.12)
 
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    message(STATUS "Setting up environment for MacOS...")
+    set(USERHOME $ENV{HOME})
+    set(sdkVersion 2.1.1)
+    set(toolchainVersion 14_2_Rel1)
+    set(picotoolVersion 2.1.1)
+    set(picoVscode ${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
+    if (EXISTS ${picoVscode})
+        include(${picoVscode})
+    endif()
+endif()
+
 # Check if the OS environment variable PICO_DEV is set, otherwise warn (and quit)
 # Inside this directory you should have the PICO SDK, Pimoroni SDK, etc.
 if (NOT DEFINED ENV{PICO_DEV})
