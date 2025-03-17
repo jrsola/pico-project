@@ -383,6 +383,7 @@ int main() {
 
     std::string time_string;
     led.set_rgb("magenta");
+    time_string = get_time();
     while(true) {
         // detect if the A button is pressed (could be A, B, X, or Y)
         if(button_a.raw() && !button_y.raw()) {
@@ -395,12 +396,12 @@ int main() {
         if(button_a.raw() && button_y.raw()) {
             reset_usb_boot(0, 0);
         } 
-
         led.blink_update();
-        screen.writexy(150,150,time_string, "dark blue");
-        time_string = get_time();
-        screen.writexy(120,150,time_string, "white");
-        sleep_ms(50);
+        if(get_time() != time_string){
+            screen.writexy(120,150,time_string, "dark blue");
+            time_string = get_time();
+            screen.writexy(120,150,time_string, "white");
+        };
     } 
 
 }
