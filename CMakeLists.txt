@@ -68,6 +68,7 @@ add_executable(${NAME}
     project_libraries/color.cpp
     project_libraries/myscreen.cpp
     project_libraries/myled.cpp
+    project_libraries/bootsel.cpp
 )
 
 # Adding some libraries here would save you from having to use subdirectories
