@@ -52,6 +52,7 @@ include(pimoroni_pico_sdk.cmake)
 
 # Other places to find headers we are going to need
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}) # for lwipopts.h 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/project_libraries) # for separate classes
 
 # Gooey boilerplate
 project(${NAME} C CXX ASM)
@@ -64,6 +65,9 @@ pico_sdk_init()
 # Add your source files
 add_executable(${NAME}
     main.cpp # <-- Add source files here!
+    project_libraries/color.cpp
+    project_libraries/myscreen.cpp
+    project_libraries/myled.cpp
 )
 
 # Adding some libraries here would save you from having to use subdirectories
