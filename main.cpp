@@ -3,6 +3,8 @@
 #include <time.h>
 
 #include "pico/stdlib.h"
+#include "pico/bootrom.h"
+#include "hardware/gpio.h"
 #include "pico/cyw43_arch.h"
 #include "lwip/apps/sntp.h"
 #include "lwip/dns.h"
@@ -135,24 +137,21 @@ class myScreen {
         void rectangle(int x, int y, int width, int height) {
             screen.rectangle(Rect(x,y,width,height));
         }
-        void writeln(const std::string_view &t, const std::string& color_name = "")
+        void writeln(const std::string_view &t = "", const std::string& color_name = "")
         {
+            this->writexy(this->textx, this->texty, t, color_name);
             this->textx=10;
-            this->write(t, color_name);
             this->texty+=16;
         }
-        void write(const std::string_view &t, const std::string& color_name = "")
+        void writexy(int x, int y, const std::string_view &t = "", const std::string& color_name = "")
         {
             if (!color_name.empty()){
                 this->set_pen(color_name);
-            }   
-            screen.text(t, pimoroni::Point(this->textx+5, this->texty+2), this->twidth);
-            this->update();
-        }
-        void writechar(char c, const std::string& color_name = "")
-        {
-            this->write(std::string(1,c), color_name);
-            this->textx+=16;
+            }
+            if (!t.empty()){         
+                screen.text(t, pimoroni::Point(x+5, y+2), this->twidth);
+                this->update();
+            }
         }
 };
 // Instantiate Screen
@@ -373,12 +372,12 @@ int main() {
     init_wifi();
     init_sntp("pool.ntp.org");
 
-    screen.writeln("SYNCRONIZING TIME...");
+    screen.writeln("SYNCRONIZING TIME","white");
     while (!time_synched) {
-        screen.writechar('.');
+        sleep_ms(50); // wait for sntp to sync clock
     }
-    screen.writeln("");
     screen.writeln("TIME SYCHRONIZED","green");
+    screen.writeln(); // empty line
 
     screen.writeln("TIME IS: ", "yellow");
 
@@ -386,17 +385,22 @@ int main() {
     led.set_rgb("magenta");
     while(true) {
         // detect if the A button is pressed (could be A, B, X, or Y)
-        if(button_a.raw()) {
+        if(button_a.raw() && !button_y.raw()) {
             // make the led glow green
             // parameters are red, green, blue all between 0 and 255
             // these are also gamma corrected
             //led_blink("blue",10);
             led.new_blink(5,500,"blue");
         }
+        if(button_a.raw() && button_y.raw()) {
+            reset_usb_boot(0, 0);
+        } 
+
         led.blink_update();
-        screen.write(time_string, "dark blue");
+        screen.writexy(150,150,time_string, "dark blue");
         time_string = get_time();
-        screen.write(time_string, "white");
+        screen.writexy(120,150,time_string, "white");
         sleep_ms(50);
     } 
+
 }
