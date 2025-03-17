@@ -16,6 +16,12 @@
 #include "rgbled.hpp"
 #include "button.hpp"
 
+#include "project_libraries/color.h"
+#include "project_libraries/myscreen.h"
+#include "project_libraries/myled.h"
+
+#include "lfs.h"
+
 #include <hardware/sync.h>
 #include "hardware/structs/ioqspi.h"
 #include "hardware/structs/sio.h"
