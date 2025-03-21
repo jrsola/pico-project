@@ -140,10 +140,6 @@ int main() {
     while(true) {
         // detect if the A button is pressed (could be A, B, X, or Y)
         if(button_a.raw() && !button_y.raw()) {
-            // make the led glow green
-            // parameters are red, green, blue all between 0 and 255
-            // these are also gamma corrected
-            //led_blink("blue",10);
             led.new_blink(5,500,"blue");
         } 
         if(button_a.raw() && button_y.raw()) {
