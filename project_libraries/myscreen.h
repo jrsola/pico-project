@@ -1,6 +1,3 @@
-#ifndef MYSCREEN_H
-#define MYSCREEN_H
-
 #include <string>
 #include <tuple>
 #include <vector>
@@ -39,5 +36,3 @@ public:
     void writeln(const std::string_view &t = "", const std::string& color_name = "");
     void writexy(int x, int y, const std::string_view &t = "", const std::string& color_name = "");
 };
-
-#endif

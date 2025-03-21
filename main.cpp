@@ -2,10 +2,10 @@
 #include <string>
 #include <time.h>
 #include <cstdint>
+#include <hardware/sync.h>
 
 #include "pico/stdlib.h"
 #include "pico/bootrom.h"
-#include "hardware/gpio.h"
 #include "pico/cyw43_arch.h"
 #include "lwip/apps/sntp.h"
 #include "lwip/dns.h"
@@ -135,8 +135,6 @@ int main() {
     screen.writeln(); // empty line
 
     screen.writeln("TIME IS: ", "yellow");
-
- 
 
     std::string time_string;
     led.set_rgb("magenta");

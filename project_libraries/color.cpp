@@ -1,6 +1,5 @@
 #include "color.h"
 
-
 const std::map<std::string, std::tuple<uint8_t, uint8_t, uint8_t>> Color::color_map = {
     {"black",       {0,0,0}},
     {"white",       {255,255,255}},

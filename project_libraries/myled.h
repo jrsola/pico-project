@@ -1,6 +1,3 @@
-#ifndef MYLED_H
-#define MYLED_H
-
 #include <string>
 #include <tuple>
 #include "pico/stdlib.h"
@@ -38,5 +35,3 @@ public:
     int new_blink(uint8_t blinks, uint16_t delay_ms, const std::string& blink_color);
     int blink_update();
 };
-
-#endif
