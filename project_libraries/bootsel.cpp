@@ -1,7 +1,4 @@
-
-
 #include "bootsel.h"
-
 
 //get_bootsel_button()
 

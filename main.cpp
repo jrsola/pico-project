@@ -147,7 +147,7 @@ int main() {
             // these are also gamma corrected
             //led_blink("blue",10);
             led.new_blink(5,500,"blue");
-        }
+        } 
         if(button_a.raw() && button_y.raw()) {
             reset_usb_boot(0, 0);
         } 
