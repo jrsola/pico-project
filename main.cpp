@@ -132,7 +132,7 @@ int main() {
     screen.writeln("TIME SYCHRONIZED","green");
     screen.writeln(); // empty line
 
-    screen.writeln("TIME IS: ", "yellow");
+    screen.writeln("TIME IS: ", "orange");
 
     std::string time_string;
     led.set_rgb("magenta");
