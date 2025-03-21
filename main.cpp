@@ -135,7 +135,7 @@ int main() {
     screen.writeln("TIME IS: ", "yellow");
 
     std::string time_string;
-    led.set_rgb("magenta");
+    led.set_rgb("light blue");
     time_string = get_time();
     while(true) {
         // detect if the A button is pressed (could be A, B, X, or Y)
