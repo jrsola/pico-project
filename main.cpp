@@ -132,7 +132,7 @@ int main() {
     screen.writeln("TIME SYCHRONIZED","green");
     screen.writeln(); // empty line
 
-    screen.writeln("TIME IS: ", "yellow");
+    screen.writeln("TIME IS: ", "orange");
 
     std::string time_string;
     led.set_rgb("light blue");
@@ -140,10 +140,6 @@ int main() {
     while(true) {
         // detect if the A button is pressed (could be A, B, X, or Y)
         if(button_a.raw() && !button_y.raw()) {
-            // make the led glow green
-            // parameters are red, green, blue all between 0 and 255
-            // these are also gamma corrected
-            //led_blink("blue",10);
             led.new_blink(5,500,"blue");
         } 
         if(button_a.raw() && button_y.raw()) {
