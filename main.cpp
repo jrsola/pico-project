@@ -21,11 +21,9 @@
 #include "project_libraries/myled.h"
 
 #include "lfs.h"
-
-
+#include "project_libraries/littlefs_helper.h"
 
 #include "project_libraries/bootsel.h"
-
 
 bool __no_inline_not_in_flash_func(get_bootsel_button)();
 
@@ -110,6 +108,9 @@ std::string get_time() {
     return std::string(buffer);
 } 
 
+int init_lfs(){
+return 0;
+}
 
 int main() {
 
@@ -120,8 +121,8 @@ int main() {
     init_screen();
  
     // Mount or format LittleFS partition
-    int pico_mount(bool format);
-    
+    init_lfs();
+        
     init_wifi();
     init_sntp("pool.ntp.org");
 
