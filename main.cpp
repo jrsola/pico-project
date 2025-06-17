@@ -21,7 +21,8 @@
 #include "project_libraries/myled.h"
 
 #include "lfs.h"
-#include "project_libraries/littlefs_helper.h"
+#include "pico_hal.h"
+#define FS_SIZE   (512 * 1024)  // 512KB reserved
 
 #include "project_libraries/bootsel.h"
 
@@ -109,7 +110,14 @@ std::string get_time() {
 } 
 
 int init_lfs(){
-return 0;
+    int err_code = pico_mount(false);
+    if (err_code == LFS_ERR_OK){
+        screen.writeln("FILESYSTEM OK", "yellow");
+    } else {
+        screen.writeln("FILESYSTEM ERROR", "red");
+        int err_code = pico_mount(true);
+    }
+    return 0;
 }
 
 int main() {

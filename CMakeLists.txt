@@ -69,7 +69,6 @@ add_executable(${NAME}
     project_libraries/myscreen.cpp
     project_libraries/myled.cpp
     project_libraries/bootsel.cpp
-    project_libraries/littlefs_helper.cpp
 )
 
 # Adding some libraries here would save you from having to use subdirectories
