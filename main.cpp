@@ -110,13 +110,27 @@ std::string get_time() {
 } 
 
 int init_lfs(){
+    lfs_size_t boot_count;
+    std::string filename = "config.txt";
+
     int err_code = pico_mount(false);
-    if (err_code == LFS_ERR_OK){
-        screen.writeln("FILESYSTEM OK", "yellow");
-    } else {
+    while (err_code != LFS_ERR_OK){
         screen.writeln("FILESYSTEM ERROR", "red");
+        screen.writeln("FORMATTING FILESYSTEM", "yellow");
+        boot_count = 0;
         int err_code = pico_mount(true);
     }
+    screen.writeln("FILESYSTEM OK", "white");
+    int file = pico_open("filename", LFS_O_RDWR | LFS_O_CREAT);
+    pico_read(file, &boot_count, sizeof(boot_count));
+    boot_count += 1;
+    pico_rewind(file);
+    pico_write(file, &boot_count, sizeof(boot_count));
+    int pos = pico_lseek(file, 0, LFS_SEEK_CUR);
+    pico_close(file);
+    pico_unmount();
+    std::string output="NUMBER OF BOOTUPS: " + std::to_string(boot_count);
+    screen.writeln(output,"white");
     return 0;
 }
 
