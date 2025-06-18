@@ -9,24 +9,19 @@
 #include "pico/cyw43_arch.h"
 #include "lwip/apps/sntp.h"
 #include "lwip/dns.h"
+#include "lwip/netif.h"
+#include "lwip/ip_addr.h"
 
-#include "pico_display_2.hpp"
-#include "pico_graphics.hpp"
-#include "st7789.hpp"
-#include "rgbled.hpp"
+#include "pico/unique_id.h"
+#include "hardware/adc.h"
+
 #include "button.hpp"
 
 #include "project_libraries/color.h"
 #include "project_libraries/myscreen.h"
 #include "project_libraries/myled.h"
-
-#include "lfs.h"
-#include "pico_hal.h"
-#define FS_SIZE   (512 * 1024)  // 512KB reserved
-
+#include "project_libraries/fileops.h"
 #include "project_libraries/bootsel.h"
-
-bool __no_inline_not_in_flash_func(get_bootsel_button)();
 
 using namespace pimoroni;
 
@@ -109,29 +104,44 @@ std::string get_time() {
     return std::string(buffer);
 } 
 
-int init_lfs(){
-    lfs_size_t boot_count;
-    std::string filename = "config.txt";
-
+void init_lfs(){
     int err_code = pico_mount(false);
     while (err_code != LFS_ERR_OK){
         screen.writeln("FILESYSTEM ERROR", "red");
         screen.writeln("FORMATTING FILESYSTEM", "yellow");
-        boot_count = 0;
         int err_code = pico_mount(true);
     }
     screen.writeln("FILESYSTEM OK", "white");
-    int file = pico_open("filename", LFS_O_RDWR | LFS_O_CREAT);
-    pico_read(file, &boot_count, sizeof(boot_count));
-    boot_count += 1;
-    pico_rewind(file);
-    pico_write(file, &boot_count, sizeof(boot_count));
-    int pos = pico_lseek(file, 0, LFS_SEEK_CUR);
-    pico_close(file);
     pico_unmount();
-    std::string output="NUMBER OF BOOTUPS: " + std::to_string(boot_count);
-    screen.writeln(output,"white");
-    return 0;
+    return;
+}
+
+std::string info_board(){
+    char id_str[PICO_UNIQUE_BOARD_ID_SIZE_BYTES * 2 + 1];
+    pico_get_unique_board_id_string(id_str, sizeof(id_str));
+    return std::string(id_str);
+}
+
+std::string info_voltage(){
+    adc_init();
+    adc_select_input(3);
+
+    uint16_t raw = adc_read();
+    float voltage = raw * 3.3f / (1 << 12) * 3.0f;
+    return std::to_string(voltage);
+}
+
+void start_access_point(const std::string& board_id){
+    size_t len = board_id.length();
+    std::string password = "KKKKKKKK"; //board_id.substr(len - 8, 4);
+    std::string suffix = board_id.substr(len - 4, 4);
+    std::string ssid = "pico_" + suffix;
+
+    screen.writeln("SSID: " + ssid, "white");
+    screen.writeln("PASS: " + password, "white");
+
+    cyw43_arch_enable_ap_mode(ssid.c_str(), password.c_str(), CYW43_AUTH_WPA2_AES_PSK);
+    screen.writeln("AP CREATED", "white");
 }
 
 int main() {
@@ -144,7 +154,18 @@ int main() {
  
     // Mount or format LittleFS partition
     init_lfs();
-        
+    std::string boot_count = readfile("boot_count.cfg");
+    if (boot_count == "") boot_count = "0";
+    boot_count = std::to_string(std::stoi(boot_count) + 1);
+    write2file("boot_count.cfg",boot_count);
+    //screen.writeln("NUMBER OF BOOTUPS: " + boot_count,"white");
+    std::string board_id = info_board();
+    screen.writeln("BOARD ID: " + board_id,"pink");
+    std::string voltage_id = info_voltage();
+    //screen.writeln("VOLTAGE: " + voltage_id + "V","pink");
+
+
+
     init_wifi();
     init_sntp("pool.ntp.org");
 
@@ -160,6 +181,9 @@ int main() {
     std::string time_string;
     led.set_rgb("light blue");
     time_string = get_time();
+
+    start_access_point(board_id);
+
     while(true) {
         // detect if the A button is pressed (could be A, B, X, or Y)
         if(button_a.raw() && !button_y.raw()) {

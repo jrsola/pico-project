@@ -69,6 +69,7 @@ add_executable(${NAME}
     project_libraries/myscreen.cpp
     project_libraries/myled.cpp
     project_libraries/bootsel.cpp
+    project_libraries/fileops.cpp
 )
 
 # Adding some libraries here would save you from having to use subdirectories
@@ -103,6 +104,7 @@ target_link_libraries(${NAME}
     button
     littlefs-lib 
     hardware_flash
+    hardware_adc
     pico_lwip_http
     pico_lwip_sntp
 )
