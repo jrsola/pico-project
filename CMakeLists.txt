@@ -70,6 +70,7 @@ add_executable(${NAME}
     project_libraries/myled.cpp
     project_libraries/bootsel.cpp
     project_libraries/fileops.cpp
+    project_libraries/buttonmgr.cpp
 )
 
 # Adding some libraries here would save you from having to use subdirectories

@@ -22,21 +22,15 @@
 #include "project_libraries/myled.h"
 #include "project_libraries/fileops.h"
 #include "project_libraries/bootsel.h"
+#include "project_libraries/buttonmgr.h"
 
 using namespace pimoroni;
 
 // Instantiate Screen
 myScreen screen;
 
-// And each button
-Button button_a(PicoDisplay2::A);
-Button button_b(PicoDisplay2::B);
-Button button_x(PicoDisplay2::X);
-Button button_y(PicoDisplay2::Y);
-
-class myButton {
-    // TO-DO
-};
+// Instantiate buttons & button manager
+ButtonManager buttonmgr;
 
 // Instantiate LED
 myLED led;
@@ -185,7 +179,7 @@ int main() {
     start_access_point(board_id);
 
     while(true) {
-        // detect if the A button is pressed (could be A, B, X, or Y)
+/*         // detect if the A button is pressed (could be A, B, X, or Y)
         if(button_a.raw() && !button_y.raw()) {
             led.new_blink(5,500,"blue");
         } 
@@ -202,7 +196,11 @@ int main() {
             screen.writexy(120,150,time_string, "dark blue");
             time_string = get_time();
             screen.writexy(120,150,time_string, "white");
-        };
+        }; */
+        buttonmgr.update();
+        if (buttonmgr.is_a()) led.new_blink(5,500,"blue");
+        if (buttonmgr.get_bootsel_event()== BootselEvent::DoublePress) reset_usb_boot(0,0);
+        led.blink_update();
     } 
 
 }
