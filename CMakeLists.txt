@@ -28,6 +28,9 @@ set(PICO_CYW43_SUPPORTED 1)
 set(PICO_LWIP 1)
 set(PICO_LWIP_THREADS 1)  # Enable thread-safe background network
 
+# Enable TinyUSB
+set(PICO_TINYUSB_ENABLE 1)
+
 # Load Default Wi-Fi values (SSID/PASSWORD) from wifi_credentials.txt
 set(WIFI_CREDENTIALS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/wifi_credentials.txt")
 if(EXISTS ${WIFI_CREDENTIALS_FILE})
@@ -53,6 +56,7 @@ include(pimoroni_pico_sdk.cmake)
 # Other places to find headers we are going to need
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}) # for lwipopts.h 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/project_libraries) # for separate classes
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/project_libraries/usbflash) # for the USBFlash
 
 # Gooey boilerplate
 project(${NAME} C CXX ASM)
@@ -71,6 +75,11 @@ add_executable(${NAME}
     project_libraries/bootsel.cpp
     project_libraries/fileops.cpp
     project_libraries/buttonmgr.cpp
+    project_libraries/usbflash/flash.c
+    project_libraries/usbflash/fatfs_driver.c
+    project_libraries/usbflash/usb_descriptors.c
+    project_libraries/usbflash/usb_msc_driver.c
+    project_libraries/usbflash/ff.c
 )
 
 # Adding some libraries here would save you from having to use subdirectories
@@ -108,6 +117,8 @@ target_link_libraries(${NAME}
     hardware_adc
     pico_lwip_http
     pico_lwip_sntp
+    hardware_flash
+    tinyusb_device
 )
 
 # create map/bin/hex file etc.
