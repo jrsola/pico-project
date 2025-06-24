@@ -25,7 +25,27 @@ This README tries to help with setting up the files for all to compile well.
 
 Tools you are going to need:
 
-Linux/Mac
+Mac - Apple Silicon
+[CMake] (https://cmake.org/download/)
+Clean up previous versions:
+sudo find /usr/local/bin -type l -lname '/Applications/CMake.app/*' -delete
+sudo rm -rf /Applications/CMake.app
+Download DMG from CMake and drag to Applications folder
+Add to PATH:
+sudo "/Applications/CMake.app/Contents/bin/cmake-gui" --install=/usr/local/bin
+
+
+Install gcc-arm toolchain from: https://developer.arm.com/downloads/-/gnu-rm
+wget https://developer.arm.com/-/media/Files/downloads/gnu/14.2.rel1/binrel/arm-gnu-toolchain-14.2.rel1-darwin-arm64-arm-none-eabi.pkg
+sudo installer -pkg arm-gnu-toolchain-14.2.rel1-darwin-arm64-arm-none-eabi.pkg -target /
+echo '/Applications/ArmGNUToolchain/14.2.rel1/arm-none-eabi/bin' | sudo tee -a /etc/paths
+
+Download picotool
+brew install picotool
+
+Do not use the ~ sign to expand into the user directory in mac, does not work
+
+Linux
 ```bash
 sudo apt update
 sudo apt install cmake gcc-arm-none-eabi build-essential
