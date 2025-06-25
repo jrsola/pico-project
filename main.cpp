@@ -22,6 +22,7 @@
 #include "project_libraries/myled.h"
 #include "project_libraries/bootsel.h"
 #include "project_libraries/buttonmgr.h"
+#include "project_libraries/fes_flash.h"
 
 using namespace pimoroni;
 
@@ -112,6 +113,15 @@ std::string info_voltage(){
     return std::to_string(voltage);
 }
 
+void init_filesytem(){
+    if (disk_init()) {
+            screen.writeln("FATFS DISK INITIALIZED", "white");
+        } else {
+            screen.writeln("ERROR INITIALIZING FATFS", "red");
+        }
+}
+
+
 int main() {
 
     // Initialize Pico
@@ -120,6 +130,9 @@ int main() {
     // Initialize screen 
     init_screen();
  
+    // Initialize FATFS 
+    init_filesytem();
+
     // Mount or format LittleFS partition
     //init_lfs();
     //std::string boot_count = readfile("boot_count.cfg");

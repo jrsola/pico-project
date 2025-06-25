@@ -1,5 +1,7 @@
 #include "fes_flash.h"
 
+static FATFS fs;
+
 DSTATUS disk_initialize(BYTE pdrv) {
     return RES_OK;
 }
@@ -34,4 +36,23 @@ DRESULT disk_ioctl(BYTE pdrv, BYTE cmd, void* buff) {
         case GET_SECTOR_COUNT: *(DWORD*)buff = FATFS_SECTOR_COUNT; return RES_OK;
         default: return RES_PARERR;
     }
+}
+
+bool disk_init() {
+    FRESULT res = f_mount(&fs, "", 1);
+    if (res != FR_OK) {
+        MKFS_PARM opt = {
+            .fmt = FM_FAT,
+            .n_fat = 1,
+            .align = 0,
+            .n_root = 0,
+            .au_size = 0
+        };
+        res = f_mkfs("",&opt,nullptr,0);
+        if (res != FR_OK) return false;
+
+        res = f_mount(&fs, "", 1);
+        if (res != FR_OK) return false;
+    }
+    return true;
 }
