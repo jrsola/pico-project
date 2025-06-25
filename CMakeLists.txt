@@ -56,7 +56,6 @@ include(pimoroni_pico_sdk.cmake)
 # Other places to find headers we are going to need
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}) # for lwipopts.h 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/project_libraries) # for separate classes
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/project_libraries/usbflash) # for the USBFlash
 
 # Gooey boilerplate
 project(${NAME} C CXX ASM)

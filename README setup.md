@@ -13,6 +13,7 @@ This README tries to help with setting up the files for all to compile well.
 - [Pico SDK](#pico-sdk)
 - [Pimoroni libraries](#pimoroni-libraries)
 - [LittleFS Libraries](#littlefs-libraries)
+- [FATFS Libraries](#fatfs-libraries)
 - [Prepare Visual Studio Code](#prepare-visual-studio-code)
 - [Prepare your project](#prepare-your-project)
 - [Pick your LICENSE](#pick-your-license)
@@ -75,12 +76,20 @@ cd /path/to/pico_dev
 git clone https://github.com/lurk101/littlefs-lib
 ```
 
+## FATFS Libraries
+```
+cd /path/to/pico_dev
+git clone https://github.com/elehobica/pico_fatfs
+```
+
+
 Your pico_dev directory should look like this now:
 ```
 pico_dev/
 ├── pico-sdk
 ├── pimoroni-pico
-└── littlefs-lib  
+├── littlefs-lib 
+└── ...
 ```
 
 ## Prepare Visual Studio Code
