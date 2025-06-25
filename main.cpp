@@ -20,7 +20,6 @@
 #include "project_libraries/color.h"
 #include "project_libraries/myscreen.h"
 #include "project_libraries/myled.h"
-#include "project_libraries/fileops.h"
 #include "project_libraries/bootsel.h"
 #include "project_libraries/buttonmgr.h"
 
@@ -98,18 +97,6 @@ std::string get_time() {
     return std::string(buffer);
 } 
 
-void init_lfs(){
-    int err_code = pico_mount(false);
-    while (err_code != LFS_ERR_OK){
-        screen.writeln("FILESYSTEM ERROR", "red");
-        screen.writeln("FORMATTING FILESYSTEM", "yellow");
-        int err_code = pico_mount(true);
-    }
-    screen.writeln("FILESYSTEM OK", "white");
-    pico_unmount();
-    return;
-}
-
 std::string info_board(){
     char id_str[PICO_UNIQUE_BOARD_ID_SIZE_BYTES * 2 + 1];
     pico_get_unique_board_id_string(id_str, sizeof(id_str));
@@ -125,19 +112,6 @@ std::string info_voltage(){
     return std::to_string(voltage);
 }
 
-void start_access_point(const std::string& board_id){
-    size_t len = board_id.length();
-    std::string password = "KKKKKKKK"; //board_id.substr(len - 8, 4);
-    std::string suffix = board_id.substr(len - 4, 4);
-    std::string ssid = "pico_" + suffix;
-
-    screen.writeln("SSID: " + ssid, "white");
-    screen.writeln("PASS: " + password, "white");
-
-    cyw43_arch_enable_ap_mode(ssid.c_str(), password.c_str(), CYW43_AUTH_WPA2_AES_PSK);
-    screen.writeln("AP CREATED", "white");
-}
-
 int main() {
 
     // Initialize Pico
@@ -147,17 +121,16 @@ int main() {
     init_screen();
  
     // Mount or format LittleFS partition
-    init_lfs();
-    std::string boot_count = readfile("boot_count.cfg");
-    if (boot_count == "") boot_count = "0";
-    boot_count = std::to_string(std::stoi(boot_count) + 1);
-    write2file("boot_count.cfg",boot_count);
+    //init_lfs();
+    //std::string boot_count = readfile("boot_count.cfg");
+    //if (boot_count == "") boot_count = "0";
+    //boot_count = std::to_string(std::stoi(boot_count) + 1);
+    //write2file("boot_count.cfg",boot_count);
     //screen.writeln("NUMBER OF BOOTUPS: " + boot_count,"white");
     std::string board_id = info_board();
     screen.writeln("BOARD ID: " + board_id,"pink");
     std::string voltage_id = info_voltage();
     //screen.writeln("VOLTAGE: " + voltage_id + "V","pink");
-
 
 
     init_wifi();
@@ -175,8 +148,6 @@ int main() {
     std::string time_string;
     led.set_rgb("light blue");
     time_string = get_time();
-
-    start_access_point(board_id);
 
     while(true) {
 /*         // detect if the A button is pressed (could be A, B, X, or Y)

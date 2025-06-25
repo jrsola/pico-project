@@ -63,6 +63,10 @@ project(${NAME} C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
+# Shrink the usable size for programs in 128 KB 
+# so we can safely place a file system
+set(PICO_FLASH_SIZE 0x1E0000)
+
 # Initialize the Pico SDK
 pico_sdk_init()
 
@@ -73,13 +77,8 @@ add_executable(${NAME}
     project_libraries/myscreen.cpp
     project_libraries/myled.cpp
     project_libraries/bootsel.cpp
-    project_libraries/fileops.cpp
     project_libraries/buttonmgr.cpp
-    project_libraries/usbflash/flash.c
-    project_libraries/usbflash/fatfs_driver.c
-    project_libraries/usbflash/usb_descriptors.c
-    project_libraries/usbflash/usb_msc_driver.c
-    project_libraries/usbflash/ff.c
+    project_libraries/fes_flash.cpp
 )
 
 # Adding some libraries here would save you from having to use subdirectories
@@ -89,10 +88,17 @@ add_subdirectory(${PIMORONI_PICO_PATH}/drivers/st7789 st7789)
 add_subdirectory(${PIMORONI_PICO_PATH}/libraries/pico_graphics pico_graphics)
 add_subdirectory(${PIMORONI_PICO_PATH}/libraries/pico_display_2 pico_display_2)
 
-
-#This is needed for LittleFS, FS_SIZE will adjust the space for the file system
-add_subdirectory(${PICO_DEV}/littlefs-lib littlefs)
-add_definitions(-DFS_SIZE=256*1024)
+# Include FATFS libraries
+add_library(fatfs INTERFACE)
+target_sources(fatfs INTERFACE
+    ${PICO_DEV}/pico_fatfs/fatfs/ff.c
+    ${PICO_DEV}/pico_fatfs/fatfs/ffsystem.c
+    ${PICO_DEV}/pico_fatfs/fatfs/ffunicode.c
+)
+target_include_directories(fatfs INTERFACE
+    ${PICO_DEV}/pico_fatfs/fatfs
+    ${PICO_DEV}/pico_fatfs/fatfs/conf
+)
 
 # Include required libraries
 include(common/pimoroni_bus)
@@ -112,13 +118,10 @@ target_link_libraries(${NAME}
     pico_graphics
     rgbled
     button
-    littlefs-lib 
-    hardware_flash
-    hardware_adc
-    pico_lwip_http
     pico_lwip_sntp
     hardware_flash
-    tinyusb_device
+    hardware_adc
+    fatfs
 )
 
 # create map/bin/hex file etc.
