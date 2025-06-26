@@ -115,12 +115,15 @@ std::string info_voltage(){
 
 void init_filesytem(){
     if (disk_init()) {
-            screen.writeln("FATFS DISK INITIALIZED", "white");
-        } else {
-            screen.writeln("ERROR INITIALIZING FATFS", "red");
-        }
+        screen.writeln("FATFS DISK INITIALIZED", "white");
+    } else {
+        screen.writeln("ERROR INITIALIZING FATFS", "red");
+    };
+    // configuration files, each holds a value. 
+    // FAT12 (8.3) format for filenames
+    if (createconfig("BOOTCNT.TXT","0"))
+        screen.writeln("ERROR WRITING CONFIG "+std::to_string(exitline), "red");
 }
-
 
 int main() {
 
@@ -134,9 +137,21 @@ int main() {
     init_filesytem();
 
     // Mount or format LittleFS partition
-    //init_lfs();
-    //std::string boot_count = readfile("boot_count.cfg");
-    //if (boot_count == "") boot_count = "0";
+    std::string config_file = "BOOTCNT.TXT"; // FAT12 (8.3)
+    std::string boot_count;
+    /* boot_count = readfilestr(config_file);
+    boot_count = "1";
+    if (boot_count == "ERROR") {
+        boot_count = "0";
+        int err = writefilestr(config_file, boot_count);
+        if  (err != FR_OK) screen.writeln("I DID NOT WRITE WELL");
+    } */
+    createconfig(config_file, "MIMAMAMEMIMA");
+    //boot_count = std::to_string(std::stoi(boot_count)+1); // Add 1 to bootcount
+    //writefilestr(config_file, boot_count);
+    boot_count = readfilestr(config_file);
+    screen.writeln("NUMBER OF BOOTUPS: " + boot_count,"white");
+
     //boot_count = std::to_string(std::stoi(boot_count) + 1);
     //write2file("boot_count.cfg",boot_count);
     //screen.writeln("NUMBER OF BOOTUPS: " + boot_count,"white");
