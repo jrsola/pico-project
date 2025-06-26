@@ -92,6 +92,7 @@ bool createconfig(const std::string& filename, const std::string& content){
     }
 
     f_close(&fil);
+    umountfs();
     return true;
 }
 
@@ -100,8 +101,8 @@ std::string readfilestr(const std::string& filename) {
     char buffer[128];
     UINT bytes_read;
     std::string content;
-    
-    FRESULT res = f_open(&fil, filename.c_str(), FA_READ);
+    mountfs();
+    res = f_open(&fil, filename.c_str(), FA_READ);
     if (res != FR_OK) return "ERROR";
 
     do {
