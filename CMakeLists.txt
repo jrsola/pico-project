@@ -18,6 +18,7 @@ if (NOT DEFINED ENV{PICO_DEV})
     message(FATAL_ERROR "Environment variable PICO_DEV is not set")
 else()
     set(PICO_DEV $ENV{PICO_DEV})
+    file(TO_CMAKE_PATH "${PICO_DEV}" PICO_DEV)
     message(STATUS "PICO_DEV is ${PICO_DEV}")
 endif()
 
@@ -78,6 +79,8 @@ add_executable(${NAME}
     project_libraries/bootsel.cpp
     project_libraries/buttonmgr.cpp
     project_libraries/msc_disk.cpp
+    project_libraries/diskio.cpp
+    project_libraries/filesystem.cpp
 )
 
 # Adding some libraries here would save you from having to use subdirectories
@@ -86,6 +89,10 @@ add_executable(${NAME}
 add_subdirectory(${PIMORONI_PICO_PATH}/drivers/st7789 st7789)
 add_subdirectory(${PIMORONI_PICO_PATH}/libraries/pico_graphics pico_graphics)
 add_subdirectory(${PIMORONI_PICO_PATH}/libraries/pico_display_2 pico_display_2)
+add_subdirectory(${PIMORONI_PICO_PATH}/drivers/fatfs fatfs)
+
+set(FATFS_COMPILE_OPTIONS -DFF_USE_MKFS=1)
+set_target_properties(fatfs PROPERTIES COMPILE_OPTIONS "${FATFS_COMPILE_OPTIONS}")
 
 # Include required libraries
 include(common/pimoroni_bus)
@@ -110,6 +117,7 @@ target_link_libraries(${NAME}
     hardware_adc
     tinyusb_device
     tinyusb_board
+    fatfs
 )
 
 # create map/bin/hex file etc.

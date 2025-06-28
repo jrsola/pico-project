@@ -23,8 +23,8 @@
 #include "project_libraries/myled.h"
 #include "project_libraries/bootsel.h"
 #include "project_libraries/buttonmgr.h"
-//#include "project_libraries/fes_flash.h"
 #include "project_libraries/msc_disk.h"
+#include "project_libraries/filesystem.h"
 
 using namespace pimoroni;
 
@@ -115,22 +115,25 @@ std::string info_voltage(){
     return std::to_string(voltage);
 }
 
-/* void init_filesytem(){
-    if (disk_init()) {
-        screen.writeln("FATFS DISK INITIALIZED", "white");
-    } else {
+void init_filesystem(){
+    format_filesystem();
+    if (!mount_filesystem()) {
         screen.writeln("ERROR INITIALIZING FATFS", "red");
+    } else {
+        screen.writeln("FATFS DISK INITIALIZED", "white");
+        
     };
     // configuration files, each holds a value. 
     // FAT12 (8.3) format for filenames
-    std::string textu = "tuputamadre";
-    if (!createconfig("bootup.txt",textu))
+/*    std::string textu = "tuputamadre";
+     if (!createconfig("bootup.txt",textu))
         screen.writeln("ERROR WRITING CONFIG "+std::to_string(exitline), "red");
     else 
         screen.writeln("BYTES WRITTEN:"+std::to_string(exitline), "red");
     if(readfilestr("bootup.txt") == "ERROR")
-        screen.writeln("ERROR READING VARIABLE "+std::to_string(exitline), "red");
-} */
+        screen.writeln("ERROR READING VARIABLE "+std::to_string(exitline), "red"); */
+    return;
+}
 
 int main() {
 
@@ -140,8 +143,11 @@ int main() {
     // Initialize screen 
     init_screen();
  
-    // Initialize FATFS 
+    // Initialize FATFS & file system 
     msc_init();
+    init_filesystem();
+
+    //Initialize USB access
     tusb_init();
 
     // Mount or format LittleFS partition
