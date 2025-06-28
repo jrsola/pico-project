@@ -1,0 +1,1 @@
+void msc_init();

@@ -11,6 +11,7 @@
 #include "lwip/dns.h"
 #include "lwip/netif.h"
 #include "lwip/ip_addr.h"
+#include "tusb.h"
 
 #include "pico/unique_id.h"
 #include "hardware/adc.h"
@@ -22,7 +23,8 @@
 #include "project_libraries/myled.h"
 #include "project_libraries/bootsel.h"
 #include "project_libraries/buttonmgr.h"
-#include "project_libraries/fes_flash.h"
+//#include "project_libraries/fes_flash.h"
+#include "project_libraries/msc_disk.h"
 
 using namespace pimoroni;
 
@@ -113,7 +115,7 @@ std::string info_voltage(){
     return std::to_string(voltage);
 }
 
-void init_filesytem(){
+/* void init_filesytem(){
     if (disk_init()) {
         screen.writeln("FATFS DISK INITIALIZED", "white");
     } else {
@@ -121,9 +123,14 @@ void init_filesytem(){
     };
     // configuration files, each holds a value. 
     // FAT12 (8.3) format for filenames
-    if (createconfig("BOOTCNT.TXT","0"))
+    std::string textu = "tuputamadre";
+    if (!createconfig("bootup.txt",textu))
         screen.writeln("ERROR WRITING CONFIG "+std::to_string(exitline), "red");
-}
+    else 
+        screen.writeln("BYTES WRITTEN:"+std::to_string(exitline), "red");
+    if(readfilestr("bootup.txt") == "ERROR")
+        screen.writeln("ERROR READING VARIABLE "+std::to_string(exitline), "red");
+} */
 
 int main() {
 
@@ -134,11 +141,12 @@ int main() {
     init_screen();
  
     // Initialize FATFS 
-    init_filesytem();
+    msc_init();
+    tusb_init();
 
     // Mount or format LittleFS partition
-    std::string config_file = "BOOTCNT.TXT"; // FAT12 (8.3)
-    std::string boot_count;
+    //std::string config_file = "BOOTCNT.TXT"; // FAT12 (8.3)
+    //std::string boot_count;
     /* boot_count = readfilestr(config_file);
     boot_count = "1";
     if (boot_count == "ERROR") {
@@ -146,11 +154,11 @@ int main() {
         int err = writefilestr(config_file, boot_count);
         if  (err != FR_OK) screen.writeln("I DID NOT WRITE WELL");
     } */
-    createconfig(config_file, "MIMAMAMEMIMA");
+    //createconfig(config_file, "MIMAMAMEMIMA");
     //boot_count = std::to_string(std::stoi(boot_count)+1); // Add 1 to bootcount
     //writefilestr(config_file, boot_count);
-    boot_count = readfilestr(config_file);
-    screen.writeln("NUMBER OF BOOTUPS: " + boot_count,"white");
+    //boot_count = readfilestr(config_file);
+    //screen.writeln("NUMBER OF BOOTUPS: " + boot_count,"white");
 
     //boot_count = std::to_string(std::stoi(boot_count) + 1);
     //write2file("boot_count.cfg",boot_count);
@@ -196,6 +204,7 @@ int main() {
             time_string = get_time();
             screen.writexy(120,150,time_string, "white");
         }; */
+        tud_task();
         buttonmgr.update();
         if (buttonmgr.is_a()) led.new_blink(5,500,"blue");
         if (buttonmgr.get_bootsel_event()== BootselEvent::DoublePress) reset_usb_boot(0,0);

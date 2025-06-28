@@ -9,16 +9,20 @@
 #include "hardware/sync.h"
 
 
-#define FATFS_OFFSET      (2 * 1024 * 1024 - 128 * 1024)  // Last 128 KB (for a 2MB flash)
+//#define FATFS_OFFSET      (2 * 1024 * 1024 - 128 * 1024)  // Last 128 KB (for a 2MB flash)
+#define FATFS_OFFSET      0x1E0000
 #define FATFS_SIZE        (128 * 1024)                    // 128 KB
 #define FATFS_SECTOR_SIZE 512                             // FAT sector logic
 #define FATFS_SECTOR_COUNT (FATFS_SIZE / FATFS_SECTOR_SIZE)
 
+#define FLASH_TARGET_OFFSET (PICO_FLASH_SIZE_BYTES - 128 * 1024)
+
+extern int exitline; // for debugging
 static FATFS fs;
 static FIL fil;
 static BYTE work_buffer[FF_MAX_SS];
-static FRESULT res; 
-static int exitline = 0;
+static FRESULT res;
+
 
 FRESULT mountfs();
 FRESULT umountfs();

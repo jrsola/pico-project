@@ -77,7 +77,7 @@ add_executable(${NAME}
     project_libraries/myled.cpp
     project_libraries/bootsel.cpp
     project_libraries/buttonmgr.cpp
-    project_libraries/fes_flash.cpp
+    project_libraries/msc_disk.cpp
 )
 
 # Adding some libraries here would save you from having to use subdirectories
@@ -86,18 +86,6 @@ add_executable(${NAME}
 add_subdirectory(${PIMORONI_PICO_PATH}/drivers/st7789 st7789)
 add_subdirectory(${PIMORONI_PICO_PATH}/libraries/pico_graphics pico_graphics)
 add_subdirectory(${PIMORONI_PICO_PATH}/libraries/pico_display_2 pico_display_2)
-
-# Include FATFS libraries
-add_library(fatfs INTERFACE)
-target_sources(fatfs INTERFACE
-    ${PICO_DEV}/pico_fatfs/fatfs/ff.c
-    ${PICO_DEV}/pico_fatfs/fatfs/ffsystem.c
-    ${PICO_DEV}/pico_fatfs/fatfs/ffunicode.c
-)
-target_include_directories(fatfs INTERFACE
-    ${PICO_DEV}/pico_fatfs/fatfs
-    ${PICO_DEV}/pico_fatfs/fatfs/conf
-)
 
 # Include required libraries
 include(common/pimoroni_bus)
@@ -120,7 +108,8 @@ target_link_libraries(${NAME}
     pico_lwip_sntp
     hardware_flash
     hardware_adc
-    fatfs
+    tinyusb_device
+    tinyusb_board
 )
 
 # create map/bin/hex file etc.
