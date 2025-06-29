@@ -81,6 +81,7 @@ add_executable(${NAME}
     project_libraries/msc_disk.cpp
     project_libraries/diskio.cpp
     project_libraries/filesystem.cpp
+    project_libraries/usb_descriptors.cpp
 )
 
 # Adding some libraries here would save you from having to use subdirectories
@@ -90,9 +91,6 @@ add_subdirectory(${PIMORONI_PICO_PATH}/drivers/st7789 st7789)
 add_subdirectory(${PIMORONI_PICO_PATH}/libraries/pico_graphics pico_graphics)
 add_subdirectory(${PIMORONI_PICO_PATH}/libraries/pico_display_2 pico_display_2)
 add_subdirectory(${PIMORONI_PICO_PATH}/drivers/fatfs fatfs)
-
-set(FATFS_COMPILE_OPTIONS -DFF_USE_MKFS=1)
-set_target_properties(fatfs PROPERTIES COMPILE_OPTIONS "${FATFS_COMPILE_OPTIONS}")
 
 # Include required libraries
 include(common/pimoroni_bus)
@@ -134,9 +132,18 @@ set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
 set(CPACK_GENERATOR "ZIP" "TGZ")
 include(CPack)
 
-# Copy .uf2 file to project directory after building
-add_custom_target(copy_uf2 ALL
-    COMMAND ${CMAKE_COMMAND} -E copy
+# Looks for a Python Interpreter
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
+
+# Adds a fat12 image to the generated .uf2 file
+# then copies the final .uf2 file to project directory 
+add_custom_target(final_image ALL
+    # Adding FAT12 image to end of generated .bin file for the program
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/disk_images/add-disk.py
+    # Converting the resulting .bin file to .uf2 with pico-sdk tool    
+    COMMAND ${Python3_EXECUTABLE} ${PICO_SDK_PATH}/tools/elf2uf2
+    ${CMAKE_COMMAND} -E copy
         ${CMAKE_CURRENT_BINARY_DIR}/${NAME}.uf2
         ${CMAKE_SOURCE_DIR}/${NAME}.uf2
     COMMENT "${NAME}.uf2 copied to project directory"

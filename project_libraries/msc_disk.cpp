@@ -1,148 +1,121 @@
 #include "msc_disk.h"
-#include "hardware/flash.h"
-#include "tusb.h"
 
-// Offset i mida de la partició FAT a la flash
-#define FLASH_DISK_OFFSET (PICO_FLASH_SIZE_BYTES - 128 * 1024)
-#define FLASH_SECTOR_SIZE 512
-#define FLASH_DISK_SIZE   (128 * 1024)
-#define MSC_BLOCK_COUNT   (FLASH_DISK_SIZE / FLASH_SECTOR_SIZE)
+#define MSC_FLASH_OFFSET  (PICO_FLASH_SIZE_BYTES - 128 * 1024)
+#define MSC_FLASH_SIZE    (128 * 1024)
+#define MSC_SECTOR_SIZE   512
+#define MSC_SECTOR_COUNT  (MSC_FLASH_SIZE / MSC_SECTOR_SIZE)
 
-#define CFG_TUD_ENDPOINT0_SIZE 64
+extern const uint8_t _binary_fat12_disk_start[]; // Linker symbols
 
-static uint8_t flash_sector_buf[FLASH_SECTOR_SIZE];
+static bool ejected = false;
 
-// Iniciació (si cal)
-void msc_init() {
-    // No fem res per ara. Es pot afegir logging si vols.
+void usb_msc_init() {
+    tusb_init();
 }
 
-// Requerit per TinyUSB MSC: nombre de blocs
-extern "C" void tud_msc_inquiry_cb(uint8_t lun, uint8_t vendor_id[8],
-                                           uint8_t product_id[16], uint8_t product_rev[4]) {
-    (void) lun;
-    memcpy(vendor_id, "RP2040  ", 8);
-    memcpy(product_id, "FLASH DISK     ", 16);
-    memcpy(product_rev, "1.0 ", 4);
+// Called when the device is mounted by the host
+void tud_mount_cb() {
+    ejected = false;
 }
 
-extern "C" bool tud_msc_test_unit_ready_cb(uint8_t) {
-    return true;
+// Called when the device is unmounted by the host
+void tud_umount_cb() {
+    ejected = true;
 }
 
-extern "C" void tud_msc_capacity_cb(uint8_t, uint32_t* block_count, uint16_t* block_size) {
-    *block_count = MSC_BLOCK_COUNT;
-    *block_size  = FLASH_SECTOR_SIZE;
+extern "C" {
+
+// READ10 Callback
+int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset,
+                          void* buffer, uint32_t bufsize) {
+    const uint8_t* flash = (const uint8_t*)(XIP_BASE + MSC_FLASH_OFFSET + lba * MSC_SECTOR_SIZE + offset);
+    memcpy(buffer, flash, bufsize);
+    return bufsize;
 }
 
-extern "C" bool tud_msc_start_stop_cb(uint8_t, uint8_t, bool, bool) {
-    return true;
-}
+// WRITE10 Callback
+int32_t tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset,
+                           uint8_t* buffer, uint32_t bufsize) {
+    uint32_t flash_offset = MSC_FLASH_OFFSET + lba * MSC_SECTOR_SIZE + offset;
+    flash_offset &= ~0xFFF;
 
-// Lectura d'un sector
-extern "C" int32_t tud_msc_read10_cb(uint8_t, uint32_t lba, uint32_t offset, void* buffer, uint32_t bufsize) {
-    if (lba >= MSC_BLOCK_COUNT) return -1;
-
-    uint32_t addr = FLASH_DISK_OFFSET + (lba * FLASH_SECTOR_SIZE) + offset;
-    memcpy(buffer, (const void*)(XIP_BASE + addr), bufsize);
-    return (int32_t)bufsize;
-}
-
-// Escriptura d'un sector
-extern "C" int32_t tud_msc_write10_cb(uint8_t, uint32_t lba, uint32_t offset, uint8_t* buffer, uint32_t bufsize) {
-    if (lba >= MSC_BLOCK_COUNT) return -1;
-
-    uint32_t addr = FLASH_DISK_OFFSET + (lba * FLASH_SECTOR_SIZE) + offset;
-
-    //  Has de llegir el sector complet abans d'esborrar-lo
-    uint32_t sector_base = FLASH_DISK_OFFSET + (lba * FLASH_SECTOR_SIZE);
-    memcpy(flash_sector_buf, (const void*)(XIP_BASE + sector_base), FLASH_SECTOR_SIZE);
-    memcpy(flash_sector_buf + offset, buffer, bufsize);
+    if (flash_offset + bufsize > PICO_FLASH_SIZE_BYTES) return -1;
 
     uint32_t ints = save_and_disable_interrupts();
-    flash_range_erase(sector_base, FLASH_SECTOR_SIZE);
-    flash_range_program(sector_base, flash_sector_buf, FLASH_SECTOR_SIZE);
+    flash_range_erase(flash_offset, 4096);  // align to 4K sectors
+    flash_range_program(flash_offset, buffer, bufsize);
     restore_interrupts(ints);
 
-    return (int32_t)bufsize;
+    return bufsize;
 }
 
-extern "C" void tud_msc_write10_complete_cb(uint8_t) {
-    // No fem res després d’escriure
-}
+// SCSI Callback
+int32_t tud_msc_scsi_cb(uint8_t lun, uint8_t const scsi_cmd[16],
+                        void* buffer, uint16_t bufsize) {
+    uint16_t reply_len = 0;
+    switch (scsi_cmd[0]) {
+        case SCSI_CMD_INQUIRY:
+            if (bufsize < 36) return -1;
+            memcpy(buffer,
+                   (uint8_t[36]){
+                       0x00, 0x80, 0x00, 0x01, 36 - 5, 0, 0, 0,
+                       'R','P','I','-','P','I','C','O',
+                       'U','S','B',' ','D','I','S','K',
+                       '1','.','0','0'
+                   },
+                   36);
+            reply_len = 36;
+            break;
 
-extern "C" bool tud_msc_is_writable_cb(uint8_t) {
-    return true;
-}
+        case SCSI_CMD_READ_CAPACITY_10:
+            if (bufsize < 8) return -1;
+            ((uint8_t*)buffer)[0] = ((MSC_SECTOR_COUNT - 1) >> 24) & 0xFF;
+            ((uint8_t*)buffer)[1] = ((MSC_SECTOR_COUNT - 1) >> 16) & 0xFF;
+            ((uint8_t*)buffer)[2] = ((MSC_SECTOR_COUNT - 1) >> 8) & 0xFF;
+            ((uint8_t*)buffer)[3] = ((MSC_SECTOR_COUNT - 1) >> 0) & 0xFF;
+            ((uint8_t*)buffer)[4] = (MSC_SECTOR_SIZE >> 24) & 0xFF;
+            ((uint8_t*)buffer)[5] = (MSC_SECTOR_SIZE >> 16) & 0xFF;
+            ((uint8_t*)buffer)[6] = (MSC_SECTOR_SIZE >> 8) & 0xFF;
+            ((uint8_t*)buffer)[7] = (MSC_SECTOR_SIZE >> 0) & 0xFF;
+            reply_len = 8;
+            break;
 
-extern "C" int32_t tud_msc_scsi_cb(uint8_t lun, uint8_t const scsi_cmd[16],
-                                   void* buffer, uint16_t bufsize) {
-    // Per defecte, TinyUSB pot gestionar algunes comandes, i aquí simplement diem que no gestionem cap extra
-    return -1;  // -1 = no implementada, TinyUSB provarà built-in handler
-}
+        case SCSI_CMD_TEST_UNIT_READY:
+        case SCSI_CMD_PREVENT_ALLOW_MEDIUM_REMOVAL:
+            reply_len = 0;
+            break;
 
-extern "C" uint8_t const * tud_descriptor_device_cb(void) {
-    static const tusb_desc_device_t desc = {
-        .bLength            = sizeof(tusb_desc_device_t),
-        .bDescriptorType    = TUSB_DESC_DEVICE,
-        .bcdUSB             = 0x0200,
-        .bDeviceClass       = TUSB_CLASS_MISC,
-        .bDeviceSubClass    = MISC_SUBCLASS_COMMON,
-        .bDeviceProtocol    = MISC_PROTOCOL_IAD,
-        .bMaxPacketSize0    = CFG_TUD_ENDPOINT0_SIZE,
-        .idVendor           = 0xCafe,
-        .idProduct          = 0x4000,
-        .bcdDevice          = 0x0100,
-        .iManufacturer      = 0x01,
-        .iProduct           = 0x02,
-        .iSerialNumber      = 0x03,
-        .bNumConfigurations = 1
-    };
-    return (uint8_t const *) &desc;
-}
-
-#define EPNUM_MSC_OUT 0x01
-#define EPNUM_MSC_IN  0x81
-#define CONFIG_TOTAL_LEN    (TUD_CONFIG_DESC_LEN + TUD_MSC_DESC_LEN)
-
-extern "C" uint8_t const * tud_descriptor_configuration_cb(uint8_t index) {
-    (void) index;
-    static uint8_t desc_cfg[] = {
-        TUD_CONFIG_DESCRIPTOR(1, 1, 0, CONFIG_TOTAL_LEN, 0x00, 100),
-        TUD_MSC_DESCRIPTOR(0, 0, EPNUM_MSC_OUT, EPNUM_MSC_IN, 64)
-    };
-    return desc_cfg;
-}
-
-const char* string_desc_arr[] = {
-    "PicoCorp",        // index = 1
-    "PicoFlashDrive",  // index = 2
-    "123456"           // index = 3
-};
-
-extern "C" uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
-    static uint16_t desc[32];
-    uint8_t chr_count;
-
-    if (index == 0) {
-        // IDIOMA: només cal retornar 0x0409 = anglès (US)
-        desc[1] = 0x0409;
-        desc[0] = (TUSB_DESC_STRING << 8) | (2 + 2); // 2 bytes per IDIOMA
-        return desc;
+        default:
+            return -1; // error
     }
 
-    index--;  // desplaça perquè string_desc_arr comença a l'índex 0
-
-    if (index >= sizeof(string_desc_arr)/sizeof(string_desc_arr[0])) return NULL;
-
-    const char* str = string_desc_arr[index];
-    chr_count = strlen(str);
-    if (chr_count > 31) chr_count = 31;
-
-    for (uint8_t i = 0; i < chr_count; ++i)
-        desc[1 + i] = str[i];
-
-    desc[0] = (TUSB_DESC_STRING << 8) | (2 * chr_count + 2);
-    return desc;
+    return reply_len;
 }
 
+// Capacitat: retorna nombre de sectors i mida de sector
+void tud_msc_capacity_cb(uint8_t lun, uint32_t* block_count, uint16_t* block_size) {
+    *block_count = MSC_SECTOR_COUNT;  // 128 KB / 512
+    *block_size  = MSC_SECTOR_SIZE;   // 512 bytes
+}
+
+// Informació del dispositiu USB (marca, model, versió)
+void tud_msc_inquiry_cb(uint8_t lun,
+                        uint8_t vendor_id[8],
+                        uint8_t product_id[16],
+                        uint8_t product_rev[4]) {
+    const char vid[] = "RPI-PICO";
+    const char pid[] = "USB DISK";
+    const char rev[] = "1.0";
+
+    memcpy(vendor_id,  vid, sizeof(vendor_id[0]) * 8);
+    memcpy(product_id, pid, sizeof(product_id[0]) * 16);
+    memcpy(product_rev, rev, sizeof(product_rev[0]) * 4);
+}
+
+// Indica si el disc està llest per operar
+bool tud_msc_test_unit_ready_cb(uint8_t lun) {
+    return true;  // Sempre disponible
+}
+
+
+} // extern "C"

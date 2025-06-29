@@ -4,20 +4,7 @@ int exitline = 0;
 
 bool mount_filesystem() {
     FRESULT res = f_mount(&fs, "", 1);
-    return res == FR_OK;
-}
-
-bool format_filesystem() {
-    MKFS_PARM opt = {
-        .fmt = FM_FAT,
-        .n_fat = 1,
-        .align = 0,
-        .n_root = 0,
-        .au_size = 0
-    };
-
-    FRESULT res = f_mkfs("", &opt, work_buffer, WORKBUFFER_SIZE);
-    return res == FR_OK;
+    return (res == FR_OK);
 }
 
 bool create_text_file(const char* filename, const char* contents) {
@@ -43,4 +30,18 @@ bool read_text_file(const char* filename, char* buffer, size_t max_size) {
 
     buffer[read_bytes] = '\0'; // assegura final de cadena
     return true;
+}
+
+std::string read_file(const std::string& path) {
+    FIL fil;
+    if (f_open(&fil, path.c_str(), FA_READ) != FR_OK)
+        return "ERROR";
+
+    char buffer[128];
+    UINT bytesRead;
+    f_read(&fil, buffer, sizeof(buffer) - 1, &bytesRead);
+    buffer[bytesRead] = '\0';
+    f_close(&fil);
+
+    return std::string(buffer);
 }

@@ -12,6 +12,8 @@
 #include "lwip/netif.h"
 #include "lwip/ip_addr.h"
 #include "tusb.h"
+#include "ff.h"
+#include "diskio.h"
 
 #include "pico/unique_id.h"
 #include "hardware/adc.h"
@@ -25,6 +27,7 @@
 #include "project_libraries/buttonmgr.h"
 #include "project_libraries/msc_disk.h"
 #include "project_libraries/filesystem.h"
+
 
 using namespace pimoroni;
 
@@ -116,7 +119,7 @@ std::string info_voltage(){
 }
 
 void init_filesystem(){
-    format_filesystem();
+    disk_initialize(0);
     if (!mount_filesystem()) {
         screen.writeln("ERROR INITIALIZING FATFS", "red");
     } else {
@@ -144,11 +147,7 @@ int main() {
     init_screen();
  
     // Initialize FATFS & file system 
-    msc_init();
-    init_filesystem();
-
-    //Initialize USB access
-    tusb_init();
+    usb_msc_init();
 
     // Mount or format LittleFS partition
     //std::string config_file = "BOOTCNT.TXT"; // FAT12 (8.3)
