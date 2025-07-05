@@ -135,17 +135,36 @@ include(CPack)
 # Looks for a Python Interpreter
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
+# Adds a disk image at the end of the compiled code in the .bin file
+set(DISK_IMAGE fat12_disk_128.img)
+set(SOURCE_BIN ${NAME}.bin)
+set(TARGET_BIN ${NAME}+disk.bin)
 
-# Adds a fat12 image to the generated .uf2 file
-# then copies the final .uf2 file to project directory 
-add_custom_target(final_image ALL
-    # Adding FAT12 image to end of generated .bin file for the program
-    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/disk_images/add-disk.py
-    # Converting the resulting .bin file to .uf2 with pico-sdk tool    
-    COMMAND ${Python3_EXECUTABLE} ${PICO_SDK_PATH}/tools/elf2uf2
-    ${CMAKE_COMMAND} -E copy
-        ${CMAKE_CURRENT_BINARY_DIR}/${NAME}.uf2
-        ${CMAKE_SOURCE_DIR}/${NAME}.uf2
-    COMMENT "${NAME}.uf2 copied to project directory"
-    DEPENDS ${NAME}
+add_custom_command(
+    OUTPUT ${CMAKE_BINARY_DIR}/${TARGET_BIN}
+    COMMAND ${CMAKE_COMMAND} -E echo "Embedding disk image into ${NAME}.bin file..."
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/disk_images/add-disk.py 
+            ${CMAKE_BINARY_DIR}/${SOURCE_BIN}
+            ${DISK_IMAGE}
+            ${CMAKE_BINARY_DIR}/${TARGET_BIN}
+    DEPENDS ${CMAKE_BINARY_DIR}/${SOURCE_BIN} 
+            ${CMAKE_SOURCE_DIR}/disk_images/${DISK_IMAGE}
+)
+
+# Looks for Picotool
+set(PICOTOOL_PATH ${CMAKE_SOURCE_DIR})
+set(FINAL_UF2 ${NAME}_FAT.uf2)
+
+add_custom_command(
+    OUTPUT ${CMAKE_SOURCE_DIR}/${FINAL_UF2}
+    COMMAND ${CMAKE_COMMAND} -E echo "Generating ${TARGET_BIN}.uf2 file..."
+    COMMAND ${PICOTOOL_PATH}/picotool uf2 convert 
+            ${CMAKE_BINARY_DIR}/${TARGET_BIN} 
+            ${CMAKE_SOURCE_DIR}/${FINAL_UF2}
+    DEPENDS ${CMAKE_BINARY_DIR}/${TARGET_BIN}
+)
+
+# Target final que genera el .uf2 i el copia al directori del projecte
+add_custom_target(build_fat ALL
+    DEPENDS ${CMAKE_SOURCE_DIR}/${FINAL_UF2}
 )
