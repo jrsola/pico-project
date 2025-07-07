@@ -169,7 +169,7 @@ int main() {
     //write2file("boot_count.cfg",boot_count);
     //screen.writeln("NUMBER OF BOOTUPS: " + boot_count,"white");
     std::string board_id = info_board();
-    screen.writeln("BOARD ID: " + board_id,"blue");
+    screen.writeln("BOARD ID: " + board_id,"green");
     std::string voltage_id = info_voltage();
     //screen.writeln("VOLTAGE: " + voltage_id + "V","pink");
 
