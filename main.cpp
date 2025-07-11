@@ -120,7 +120,7 @@ std::string info_voltage(){
 
 void init_filesystem(){
     disk_initialize(0);
-    if (!mount_filesystem()) {
+    if (!mountfs()) {
         screen.writeln("ERROR INITIALIZING FATFS", "red");
     } else {
         screen.writeln("FATFS DISK INITIALIZED", "white");
@@ -128,13 +128,11 @@ void init_filesystem(){
     };
     // configuration files, each holds a value. 
     // FAT12 (8.3) format for filenames
-/*    std::string textu = "tuputamadre";
-     if (!createconfig("bootup.txt",textu))
-        screen.writeln("ERROR WRITING CONFIG "+std::to_string(exitline), "red");
+    std::string textu = "AMIGARULEZ";
+     if (!write_file("/CONFIG.TXT","WIFI_NAME\nWIFI_PASSWORD"))
+        screen.writeln("ERROR WRITING CONFIG FILE", "red");
     else 
-        screen.writeln("BYTES WRITTEN:"+std::to_string(exitline), "red");
-    if(readfilestr("bootup.txt") == "ERROR")
-        screen.writeln("ERROR READING VARIABLE "+std::to_string(exitline), "red"); */
+        screen.writeln("CONFIG FILE WRITTEN", "green");
     return;
 }
 
@@ -147,6 +145,7 @@ int main() {
     init_screen();
  
     // Initialize FATFS & file system 
+    init_filesystem();
     usb_msc_init();
 
     // Mount or format LittleFS partition

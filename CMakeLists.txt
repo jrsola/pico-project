@@ -133,7 +133,7 @@ set(CPACK_GENERATOR "ZIP" "TGZ")
 include(CPack)
 
 # When TRUE it will embed a FAT image at the end of our project
-set(INCLUDE_FAT_IMAGE FALSE)  
+set(INCLUDE_FAT_IMAGE TRUE)  
 
 if(INCLUDE_FAT_IMAGE)
     message(STATUS "APPENDING DISK IMAGE: TRUE") 
