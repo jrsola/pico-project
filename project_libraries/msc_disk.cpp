@@ -56,14 +56,13 @@ int32_t tud_msc_scsi_cb(uint8_t lun, uint8_t const scsi_cmd[16],
     switch (scsi_cmd[0]) {
         case SCSI_CMD_INQUIRY:
             if (bufsize < 36) return -1;
-            memcpy(buffer,
-                   (uint8_t[36]){
-                       0x00, 0x80, 0x00, 0x01, 36 - 5, 0, 0, 0,
-                       'R','P','I','-','P','I','C','O',
-                       'U','S','B',' ','D','I','S','K',
-                       '1','.','0','0'
-                   },
-                   36);
+            static const uint8_t inquiry_response[36] = {
+                0x00, 0x80, 0x00, 0x01, 36 - 5, 0, 0, 0,
+                'R','P','I','-','P','I','C','O',
+                'U','S','B',' ','D','I','S','K',
+                '1','.','0','0'
+            };
+            memcpy(buffer, inquiry_response, 36);
             reply_len = 36;
             break;
 
